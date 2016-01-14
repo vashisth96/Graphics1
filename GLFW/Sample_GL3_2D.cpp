@@ -33,6 +33,11 @@ struct GLMatrices {
 
 GLuint programID;
 
+
+int N = 20;
+VAO * objects[N];
+
+
 /* Function to load Shaders - Use it as it is */
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path) {
 
@@ -305,20 +310,23 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
     Matrices.projection = glm::ortho(-10.0f, 10.0f, -4.0f, 4.0f, 0.1f, 500.0f);
 }
 
-VAO *triangle, *rectangle;
-
-void createTriangle ()
+//VAO *triangle, *rectangle;
+VAO * createTriangle ()
 {
-  static const GLfloat vertex_buffer_data [] = {0, 1,0,-1,-1,0,1,-1,0,};
-  static const GLfloat color_buffer_data [] = {1,0,0,0,1,0,0,0,1,};
+  VAO *triangle;
+  GLfloat vertex_buffer_data [] = {0, 1,0,-1,-1,0,1,-1,0,};
+  GLfloat color_buffer_data [] = {1,0,0,0,1,0,0,0,1,};
   triangle = create3DObject(GL_TRIANGLES, 3, vertex_buffer_data, color_buffer_data, GL_LINE);
+  return triangle;
 }
 
-void createRectangle ()
+VAO * createRectangle ()
 {
-  static const GLfloat vertex_buffer_data [] = { -1.2,-1,0, 1.2,-1,0,1.2, 1,0,   1.2, 1,0,-1.2, 1,0,-1.2,-1,0 };
-  static const GLfloat color_buffer_data [] = { 1,0,0, 200,200,200,0,1,0,       0,1,0,200,200,200,1,0,0 };
+	VAO * rectangle;
+  GLfloat vertex_buffer_data [] = { -1.2,-1,0, 1.2,-1,0,1.2, 1,0,   1.2, 1,0,-1.2, 1,0,-1.2,-1,0 };
+  GLfloat color_buffer_data [] = { 1,0,0, 200,200,200,0,1,0,       0,1,0,200,200,200,1,0,0 };
   rectangle = create3DObject(GL_TRIANGLES, 6, vertex_buffer_data, color_buffer_data, GL_FILL);
+	return rectangle;
 }
 
 float camera_rotation_angle = 90;
@@ -372,7 +380,7 @@ void draw ()
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
 
   // draw3DObject draws the VAO given to it using current MVP matrix
-  draw3DObject(triangle);
+  draw3DObject(objects[0]);
 
   // Pop matrix to undo transformations till last push matrix instead of recomputing model matrix
   // glPopMatrix ();
@@ -385,7 +393,7 @@ void draw ()
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
 
   // draw3DObject draws the VAO given to it using current MVP matrix
-  draw3DObject(rectangle);
+  draw3DObject(objects[1]);
 
   // Increment angles
   float increments = 1;
@@ -449,8 +457,10 @@ void initGL (GLFWwindow* window, int width, int height)
 {
     /* Objects should be created before any other gl function and shaders */
 	// Create the models
-	createTriangle (); // Generate the VAO, VBOs, vertices data & copy into the array buffer
-	createRectangle ();
+
+	for(int i=0;i<5;i++)
+		objects[i]=createRectangle (); // Generate the VAO, VBOs, vertices data & copy into the array buffer
+	//createRectangle ();
 	
 	// Create and compile our GLSL program from the shaders
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
