@@ -223,10 +223,6 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
                 break;
             case GLFW_KEY_DOWN:
                 rectangle_rot_status = false;
-		//triangle_rot_status = !triangle_rot_status;
-                break;
-            case GLFW_KEY_X:
-                // do something ..
                 break;
             default:
                 break;
