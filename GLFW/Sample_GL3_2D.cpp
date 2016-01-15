@@ -13,6 +13,13 @@
 
 using namespace std;
 
+int N = 20;
+int markedobj=-1;
+int firsttime=1;
+float centerx = 3.3;
+float centery = -3.3;
+int horimove = 0;
+int vermove = 0;
 struct VAO {
     GLuint VertexArrayID;
     GLuint VertexBuffer;
@@ -21,6 +28,10 @@ struct VAO {
     GLenum PrimitiveMode;
     GLenum FillMode;
     int NumVertices;
+    int objnum;
+    float x1,x2,x3,x4,y1,y2,y3,y4;
+    float translatex;
+    float translatey;
 };
 typedef struct VAO VAO;
 
@@ -34,8 +45,7 @@ struct GLMatrices {
 GLuint programID;
 
 
-int N = 20;
-VAO * objects[N];
+VAO * objects[100];
 
 
 /* Function to load Shaders - Use it as it is */
@@ -237,13 +247,56 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
         switch (key) 
 	{
 		case GLFW_KEY_UP:
-			rectangle_rot_dir=5;
-			rectangle_rot_status = true;//rectangle_rot_status;
+			for(int i=0;i<15;i++)
+			{
+				if(objects[i]->x1<=centerx && objects[i]->x2>=centerx && objects[i]->x3>=centerx && objects[i]->x4<=centerx)
+					if(objects[i]->y1<=centery-2.2 && objects[i]->y2<=centery-2.2 && objects[i]->y3>=centery-2.2 && objects[i]->y4>=centery-2.2)
+					{
+						markedobj=i;
+						horimove=0;vermove=1;
+					}
+			}
+			//rectangle_rot_dir=5;
+			//rectangle_rot_status = true;//rectangle_rot_status;
+			break;
+		case GLFW_KEY_LEFT:
+			for(int i=0;i<15;i++)
+			{
+				if(objects[i]->x1<=centerx+2.2 && objects[i]->x2>=centerx+2.2 && objects[i]->x3>=centerx+2.2 && objects[i]->x4<=centerx+2.2)
+					if(objects[i]->y1<=centery && objects[i]->y2<=centery && objects[i]->y3>=centery && objects[i]->y4>=centery)
+					{
+						markedobj=i;
+						horimove=-1;vermove=0;
+					}
+			}
+			//rectangle_rot_dir=-5;
+			//rectangle_rot_status=true;
+			break;
+		case GLFW_KEY_RIGHT:
+			for(int i=0;i<15;i++)
+			{
+				if(objects[i]->x1<=centerx-2.2 && objects[i]->x2>=centerx-2.2 && objects[i]->x3>=centerx-2.2 && objects[i]->x4<=centerx-2.2)
+					if(objects[i]->y1<=centery && objects[i]->y2<=centery && objects[i]->y3>=centery && objects[i]->y4>=centery)
+					{
+						markedobj=i;
+						horimove=1;vermove=0;
+					}
+			}
 			break;
 		case GLFW_KEY_DOWN:
-			rectangle_rot_dir=-5;
-			rectangle_rot_status=true;
+			for(int i=0;i<15;i++)
+			{
+				if(objects[i]->x1<=centerx && objects[i]->x2>=centerx && objects[i]->x3>=centerx && objects[i]->x4<=centerx)
+					if(objects[i]->y1<=centery+2.2 && objects[i]->y2<=centery+2.2 && objects[i]->y3>=centery+2.2 && objects[i]->y4>=centery+2.2)
+					{
+						markedobj=i;
+						horimove=0;vermove=-1;
+					}
+			}
 			break;
+
+
+			
 		case GLFW_KEY_ESCAPE:
                 quit(window);
                 break;
@@ -307,7 +360,7 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
     // Matrices.projection = glm::perspective (fov, (GLfloat) fbwidth / (GLfloat) fbheight, 0.1f, 500.0f);
 
     // Ortho projection for 2D views
-    Matrices.projection = glm::ortho(-10.0f, 10.0f, -4.0f, 4.0f, 0.1f, 500.0f);
+    Matrices.projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 500.0f);
 }
 
 //VAO *triangle, *rectangle;
@@ -323,8 +376,8 @@ VAO * createTriangle ()
 VAO * createRectangle ()
 {
 	VAO * rectangle;
-  GLfloat vertex_buffer_data [] = { -1.2,-1,0, 1.2,-1,0,1.2, 1,0,   1.2, 1,0,-1.2, 1,0,-1.2,-1,0 };
-  GLfloat color_buffer_data [] = { 1,0,0, 200,200,200,0,1,0,       0,1,0,200,200,200,1,0,0 };
+  GLfloat vertex_buffer_data [] = { -1,-1,0,   1,-1,0,   -1, 1,0,   1, 1,0,  -1,1,0,  1,-1,0 };
+  GLfloat color_buffer_data [] = { 1,0,0, 200,200,200,  0,1,0,       0,1,0,   200,200,200,  1,0,0 };
   rectangle = create3DObject(GL_TRIANGLES, 6, vertex_buffer_data, color_buffer_data, GL_FILL);
 	return rectangle;
 }
@@ -333,68 +386,96 @@ float camera_rotation_angle = 90;
 float rectangle_rotation = 0;
 float triangle_rotation = 0;
 
-/* Render the scene with openGL */
-/* Edit this function according to your assignment */
 void draw ()
 {
-  // clear the color and depth in the frame buffer
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-  // use the loaded shader program
-  // Don't change unless you know what you are doing
   glUseProgram (programID);
-
-  // Eye - Location of camera. Don't change unless you are sure!!
   glm::vec3 eye ( 5*cos(camera_rotation_angle*M_PI/180.0f), 0, 5*sin(camera_rotation_angle*M_PI/180.0f) );
-  // Target - Where is the camera looking at.  Don't change unless you are sure!!
   glm::vec3 target (0, 0, 0);
-  // Up - Up vector defines tilt of camera.  Don't change unless you are sure!!
   glm::vec3 up (0, 1, 0);
-
-  // Compute Camera matrix (view)
-  // Matrices.view = glm::lookAt( eye, target, up ); // Rotating Camera for 3D
-  //  Don't change unless you are sure!!
   Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
-
-  // Compute ViewProject matrix as view/camera might not be changed for this frame (basic scenario)
-  //  Don't change unless you are sure!!
   glm::mat4 VP = Matrices.projection * Matrices.view;
-
-  // Send our transformation to the currently bound shader, in the "MVP" uniform
-  // For each model you render, since the MVP will be different (at least the M part)
-  //  Don't change unless you are sure!!
   glm::mat4 MVP;	// MVP = Projection * View * Model
 
-  // Load identity to model matrix
-  Matrices.model = glm::mat4(1.0f);
+  float transx,transy;
+  transx=-3.3f;//75;
+  transy=3.3f;//75;
 
-  /* Render your scene */
+  for(int i=0;i<15;i++)
+  {
+	  
+	  Matrices.model = glm::mat4(1.0f);
+	  glm::mat4 translateRectangle;
+	  if(markedobj==i)
+	  {
+		  objects[i]->x1+=horimove*2.2;
+		  objects[i]->x2+=horimove*2.2;
+		  objects[i]->x3+=horimove*2.2;
+		  objects[i]->x4+=horimove*2.2;
+		  objects[i]->translatex+=horimove*2.2;
+		  centerx-=horimove*2.2;
+		  markedobj=-1;
 
-  glm::mat4 translateTriangle = glm::translate (glm::vec3(-2.0f, 0.0f, 0.0f)); // glTranslatef
+		  objects[i]->y1+=vermove*2.2;
+		  objects[i]->y2+=vermove*2.2;
+		  objects[i]->y3+=vermove*2.2;
+		  objects[i]->y4+=vermove*2.2;
+		  objects[i]->translatey+=vermove*2.2;
+		  centery-=vermove*2.2;
+		  markedobj=-1;
+
+	  }
+	  if(firsttime)
+	  {
+		  objects[i]->x1+=transx;
+	  	  objects[i]->x2+=transx;
+		  objects[i]->x3+=transx;
+		  objects[i]->x4+=transx;
+	
+	  	  objects[i]->y1+=transy;
+	  	  objects[i]->y2+=transy;
+	  	  objects[i]->y3+=transy;
+	  	  objects[i]->y4+=transy;
+
+		  objects[i]->translatex=transx;
+		  objects[i]->translatey=transy;
+
+	  }
+	  translateRectangle = glm::translate (glm::vec3(objects[i]->translatex,objects[i]->translatey, 0));        // glTranslatef
+	  
+	  //glm::mat4 rotateRectangle = glm::rotate((float)(rectangle_rotation*M_PI/180.0f), glm::vec3(0,0,1)); // rotate about vector (-1,1,1)
+  	  Matrices.model *= translateRectangle;//rotateRectangle;//translateRectangle * rotateRectangle;
+	  MVP = VP * Matrices.model;
+	  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+	  draw3DObject(objects[i]);
+	  cout<<transx<<endl;
+	    if(transx<=3.4f && transx>=3.2f)
+	    {
+		  transx=-3.3f;//75;//*(double)1.8;
+		  transy-=2.2f;//(double)1.2;
+	    }  
+	  else
+		  transx+=2.2f;//(double)1.2;
+  }
+  firsttime=0;
+
+
+ /* glm::mat4 translateTriangle = glm::translate (glm::vec3(-2.0f, 0.0f, 0.0f)); // glTranslatef
   glm::mat4 rotateTriangle = glm::rotate((float)(triangle_rotation*M_PI/180.0f), glm::vec3(0,1,0));  // rotate about vector (1,0,0)
   glm::mat4 triangleTransform =  translateTriangle * rotateTriangle;
   Matrices.model *= triangleTransform; 
   MVP = VP * Matrices.model; // MVP = p * V * M
-
-  //  Don't change unless you are sure!!
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-
-  // draw3DObject draws the VAO given to it using current MVP matrix
   draw3DObject(objects[0]);
 
-  // Pop matrix to undo transformations till last push matrix instead of recomputing model matrix
-  // glPopMatrix ();
   Matrices.model = glm::mat4(1.0f);
-
   glm::mat4 translateRectangle = glm::translate (glm::vec3(2, 0, 0));        // glTranslatef
   glm::mat4 rotateRectangle = glm::rotate((float)(rectangle_rotation*M_PI/180.0f), glm::vec3(0,0,1)); // rotate about vector (-1,1,1)
-  Matrices.model *= translateRectangle * rotateRectangle;
+  Matrices.model *= rotateRectangle;//translateRectangle * rotateRectangle;
   MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-
-  // draw3DObject draws the VAO given to it using current MVP matrix
   draw3DObject(objects[1]);
-
+*/
   // Increment angles
   float increments = 1;
 
@@ -458,9 +539,23 @@ void initGL (GLFWwindow* window, int width, int height)
     /* Objects should be created before any other gl function and shaders */
 	// Create the models
 
-	for(int i=0;i<5;i++)
+	for(int i=0;i<15;i++)
+	{
 		objects[i]=createRectangle (); // Generate the VAO, VBOs, vertices data & copy into the array buffer
-	//createRectangle ();
+		objects[i]->objnum=i+1;
+	  	objects[i]->x1=-1;
+	  	objects[i]->x2=1;
+	  	objects[i]->x3=1;
+	  	objects[i]->x4=-1;
+
+	  	objects[i]->y1=-1;
+	  	objects[i]->y2=-1;
+	  	objects[i]->y3=1;
+	  	objects[i]->y4=1;
+	  
+		
+	}
+		//createRectangle ();
 	
 	// Create and compile our GLSL program from the shaders
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
@@ -486,7 +581,7 @@ void initGL (GLFWwindow* window, int width, int height)
 int main (int argc, char** argv)
 {
 	int width = 800;
-	int height = 600;
+	int height = 800;
 
     GLFWwindow* window = initGLFW(width, height);
 
