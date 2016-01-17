@@ -22,7 +22,7 @@ struct VAO {
     int NumVertices;
 };
 typedef struct VAO VAO;
-
+int N = 20;
 struct GLMatrices {
 	glm::mat4 projection;
 	glm::mat4 model;
@@ -32,12 +32,19 @@ struct GLMatrices {
 
 GLuint programID;
 
-int N = 20;
+
+//*****************************//
+//****** TANK VARIABLES *******//
+//*****************************//
 
 float TRANSLATE_TANK_BY = 0.0f;
 float TANK_POS_X=0.0f;
 float TURRET_ANGLE = 40;
 float ROTATE_TURRET_BY = 0;
+
+//****************************//
+//****** BALL VARIABLES ******//
+//****************************//
 
 float VELOCITY = .5f;
 float BALL_POS_X = TANK_POS_X;
@@ -46,12 +53,23 @@ float DECELERATION = 0.1f;
 float BALL_VEL_X = 0.0f;
 float BALL_VEL_Y = 0.0f;
 
+//****************************//
+//***** BOOLEAN VARIABLES ****//
+//****************************//
 
 int SHOW_BALL = 1;
 int SHOW_CHAINS = 1;
+float ENEMY_WALL_1_ANGLE = 10.0f;
+int count=0;
+int LOCK = 0;
+float transturretx=9.2f;
+float transturrety =-9.0f;
 
 
-VAO * objects[100],*GROUND,*SKY,*WHEELS[20],*TANK_BODY_UPPER,*TANK_BODY_LOWER,*TANK_TURRET_BASE,*TANK_SPROCKET_LEFT,*TANK_SPROCKET_RIGHT,*TANK_TRACK,*TANK_TURRET,*TANK_TURRET_END,*BALL,*ENEMY_WALL_1,*CHAINS[20];
+VAO *GROUND,*SKY,*WHEELS[20],*TANK_BODY_UPPER,*TANK_BODY_LOWER,*TANK_TURRET_BASE,*TANK_SPROCKET_LEFT;
+VAO *TANK_SPROCKET_RIGHT,*TANK_TRACK,*TANK_TURRET,*TANK_TURRET_END,*BALL,*ENEMY_WALL_1,*CHAINS[20];
+VAO *ENEMY_TURRET_BASE,*ENEMY_TURRET_RING,*ENEMY_TURRET_BODY,*ENEMY_TURRET_GUN;
+
 
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path) {
 
@@ -227,6 +245,7 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 			    BALL_VEL_Y = VELOCITY * sin( TURRET_ANGLE * M_PI/180.0);
 		            DECELERATION = BALL_VEL_Y/15.0;
 			    SHOW_BALL = 1;
+			    LOCK=1;
 		    default:
 			    break;
 	    }
@@ -452,19 +471,36 @@ void draw ()
 	  draw3DObject(BALL);
   }
 
-  BALL_POS_X += BALL_VEL_X;
-  BALL_POS_Y += BALL_VEL_Y;
-  BALL_VEL_Y-=DECELERATION;
-  if(BALL_POS_Y<=-2.6)
-	   SHOW_BALL = 0;
-
-  if(BALL_POS_X-6.9f >=7.5f && BALL_POS_X <= 10.0f && BALL_POS_Y <= -6.7)
+  if(SHOW_BALL)
   {
-	  SHOW_CHAINS = 0;
+	  BALL_POS_X += BALL_VEL_X;
+	  BALL_POS_Y += BALL_VEL_Y;
+	  BALL_VEL_Y-=DECELERATION;
+  }
+  if(BALL_POS_Y<=-2.6)
+  {
+	   SHOW_BALL = 0;
+	   BALL_POS_X = TANK_POS_X;
+	   BALL_POS_Y=0.0f;
   }
 
+  if(LOCK && BALL_POS_X-6.9f >=9.0f && BALL_POS_X -6.9f <= 10.0f && BALL_POS_Y <= 0.2f && BALL_POS_Y >=-2)//-6.7)
+  {
+	  count++;
+	  LOCK=0;
+  }
+  if(count>=3)
+	  SHOW_CHAINS=0;
+
+  if(!SHOW_CHAINS)
+  {
+	 ENEMY_WALL_1_ANGLE+=4;
+  }
+  if(ENEMY_WALL_1_ANGLE>=90.0f)
+	  ENEMY_WALL_1_ANGLE = 90.0f;
+
   Matrices.model = glm::mat4(1.0f);
-  glm::mat4 rotateenemywall1 = glm::rotate((float)(10.0*M_PI/180.0f), glm::vec3(0,0,1));
+  glm::mat4 rotateenemywall1 = glm::rotate((float)(ENEMY_WALL_1_ANGLE*M_PI/180.0f), glm::vec3(0,0,1));
   glm::mat4 tenemywall1 = glm::translate (glm::vec3(8.0, -9.0f, 0.0f)); 
   Matrices.model*=tenemywall1*rotateenemywall1;
   MVP = VP * Matrices.model;
@@ -484,6 +520,51 @@ void draw ()
 		  draw3DObject(CHAINS[i]);
 	  }
   }
+
+
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 t4 = glm::translate (glm::vec3(transturretx, transturrety, 0.0f)); 
+  Matrices.model*=t4;
+  MVP = VP * Matrices.model;
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(ENEMY_TURRET_GUN);
+
+
+
+
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 t1 = glm::translate (glm::vec3(transturretx, transturrety, 0.0f)); 
+  Matrices.model*=t1;
+  MVP = VP * Matrices.model;
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(ENEMY_TURRET_BASE);
+
+
+
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 t2 = glm::translate (glm::vec3(transturretx, transturrety,0.0f)); 
+  Matrices.model*=t2;
+  MVP = VP * Matrices.model;
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(ENEMY_TURRET_RING);
+
+
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 t3 = glm::translate (glm::vec3(transturretx, transturrety, 0.0f)); 
+  Matrices.model*=t3;
+  MVP = VP * Matrices.model;
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(ENEMY_TURRET_BODY);
+
+
+
+
+
+
+
+
+
+
 }
 
 GLFWwindow* initGLFW (int width, int height)
@@ -537,7 +618,7 @@ void initGL (GLFWwindow* window, int width, int height)
 	TANK_TURRET_END =createRectangle(0.15f,0.15f,0.15f,0.15f,0.15f,0.15f, 0.8f,-0.2f, 1.0f,-0.2f, 0.8f,0.2f, 1.0f,0.2f);
 
 	BALL = createCircle(1.5f,0.0f,0.0f,.3f,108);
-	ENEMY_WALL_1 = createRectangle(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,  -0.2f,0.0f, 0.2f,0.0f, -0.2f,2.0f, 0.2f,2.0f);
+	ENEMY_WALL_1 = createRectangle(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,  -0.1f,0.0f, 0.1f,0.0f, -0.1f,2.0f, 0.1f,2.0f);
 	
 	float l_add = 0.0f;
 	for(int i=0;i<13;i++)
@@ -545,6 +626,19 @@ void initGL (GLFWwindow* window, int width, int height)
 		CHAINS[i]=createRectangleOutline(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f, -0.1f+l_add,0.0f, 0.0f+l_add,-0.1f, 0.0f+l_add,.1f, 0.1f+l_add,-0.0f);
 		l_add+=0.2f;
 	}
+
+
+	ENEMY_TURRET_BASE = createRectangle(0.317f,0.317f,0.317f,0.317f,0.317f,0.317f, -0.8f,0.0f,  0.8f,0.0f,  -0.6f,0.3f,  0.6f,0.3f);
+	ENEMY_TURRET_RING = createRectangle(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f, -0.3f,0.3f, 0.3f,0.3f, -0.1f,0.6f, 0.1f,0.6f);
+	ENEMY_TURRET_BODY = createRectangle(0.317f,0.317f,0.317f,0.317f,0.317f,0.317f, -0.4f,0.6f, 0.4f,0.6f, -0.2f,1.0, 0.35f,1.0f);
+	ENEMY_TURRET_GUN = createRectangle(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f, -0.9f,0.75f, -0.2f,0.7f, -0.9f,.85f, -0.2f,.9f);
+
+
+
+
+
+
+
 
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
 	Matrices.MatrixID = glGetUniformLocation(programID, "MVP");
