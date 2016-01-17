@@ -45,7 +45,7 @@ struct GLMatrices {
 GLuint programID;
 
 
-VAO * objects[100];
+VAO * objects[100],*triangletemp,*rectangletemp,*ground,*sky,*circle[20],*tank1,*tank2,*tank3,*endcircle1,*endcircle2,*tankoutline;
 
 
 /* Function to load Shaders - Use it as it is */
@@ -363,24 +363,85 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
     Matrices.projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 500.0f);
 }
 
-//VAO *triangle, *rectangle;
-VAO * createTriangle ()
+
+VAO * createCircle( GLfloat x, GLfloat y, GLfloat z, GLfloat radius, GLint numberOfSides )
 {
-  VAO *triangle;
-  GLfloat vertex_buffer_data [] = {0, 1,0,-1,-1,0,1,-1,0,};
-  GLfloat color_buffer_data [] = {1,0,0,0,1,0,0,0,1,};
-  triangle = create3DObject(GL_TRIANGLES, 3, vertex_buffer_data, color_buffer_data, GL_LINE);
-  return triangle;
+    int numberOfVertices = numberOfSides + 2,i;
+
+    GLfloat twicePi = 2.0f * M_PI;
+
+    GLfloat circleVerticesX[numberOfVertices];
+    GLfloat circleVerticesY[numberOfVertices];
+    GLfloat circleVerticesZ[numberOfVertices];
+
+    circleVerticesX[0] = x;
+    circleVerticesY[0] = y;
+    circleVerticesZ[0] = z;
+
+    for ( i = 1; i < numberOfVertices; i++ )
+    {
+        circleVerticesX[i] = x + ( radius * cos( i *  twicePi / numberOfSides ) );
+        circleVerticesY[i] = y + ( radius * sin( i * twicePi / numberOfSides ) );
+        circleVerticesZ[i] = z;
+    }
+
+    GLfloat allCircleVertices[( numberOfVertices ) * 3];
+    GLfloat allCircleColors[( numberOfVertices ) * 3 * 3];
+
+    for ( int i = 0; i < numberOfVertices; i++ )
+    {
+        allCircleVertices[i * 3] = circleVerticesX[i];
+        allCircleVertices[( i * 3 ) + 1] = circleVerticesY[i];
+        allCircleVertices[( i * 3 ) + 2] = circleVerticesZ[i];
+    }
+    printf("%d\n",i);
+    for (int j=0;j<330;j++)
+    {
+	allCircleColors[j]=.517f;
+    }
+    VAO * tempcircle = create3DObject(GL_TRIANGLE_FAN,110, allCircleVertices, allCircleColors, GL_TRIANGLES);
+    return tempcircle;
+    /*glEnableClientState( GL_VERTEX_ARRAY );
+    glVertexPointer( 3, GL_FLOAT, 0, allCircleVertices );
+    glDrawArrays( GL_TRIANGLE_FAN, 0, numberOfVertices);
+    glDisableClientState( GL_VERTEX_ARRAY );*/
 }
 
-VAO * createRectangle ()
+
+VAO * createTriangle (float r1,float g1,float b1,float r2,float g2,float b2,float x1,float y1,float x2,float y2,float x3,float y3)
+{
+	VAO *triangle;
+  	GLfloat vertex_buffer_data [] = {x1,y1,0 , x2,y2,0 , x3,y3,0};
+  	GLfloat color_buffer_data [] = {r1,g1,b1, r2,g2,b2, r2,g2,b2,};
+  	triangle = create3DObject(GL_TRIANGLES, 3, vertex_buffer_data, color_buffer_data, GL_FILL);
+  	return triangle;
+}
+
+VAO * createRectangle (float r1,float g1,float b1,float r2,float g2,float b2,float x1,float y1,float x2,float y2,float x3,float y3,float x4,float y4)
 {
 	VAO * rectangle;
-  GLfloat vertex_buffer_data [] = { -1,-1,0,   1,-1,0,   -1, 1,0,   1, 1,0,  -1,1,0,  1,-1,0 };
-  GLfloat color_buffer_data [] = { 1,0,0, 200,200,200,  0,1,0,       0,1,0,   200,200,200,  1,0,0 };
-  rectangle = create3DObject(GL_TRIANGLES, 6, vertex_buffer_data, color_buffer_data, GL_FILL);
+	GLfloat vertex_buffer_data [] = { x1,y1,0, x2,y2,0 , x3,y3,0, x4,y4,0, x3,y3,0 , x2,y2,0};
+	GLfloat color_buffer_data [] = {  r1,g1,b1, r1,g1,b1, r2,g2,b2,  r2,g2,b2, r2,g2,b2, r1,g1,b1}; // 1 , 2 , 3 , 4 , 3, 2 
+	rectangle = create3DObject(GL_TRIANGLES, 6, vertex_buffer_data, color_buffer_data, GL_FILL);
 	return rectangle;
 }
+
+
+
+VAO * createRectangleOutline (float r1,float g1,float b1,float r2,float g2,float b2,float x1,float y1,float x2,float y2,float x3,float y3,float x4,float y4)
+{
+	VAO * rectangle;
+	GLfloat vertex_buffer_data [] = { x1,y1,0, x2,y2,0 , x3,y3,0, x4,y4,0, x3,y3,0 , x2,y2,0};
+	GLfloat color_buffer_data [] = {  r1,g1,b1, r1,g1,b1, r2,g2,b2,  r2,g2,b2, r2,g2,b2, r1,g1,b1}; // 1 , 2 , 3 , 4 , 3, 2 
+	rectangle = create3DObject(GL_TRIANGLES, 6, vertex_buffer_data, color_buffer_data, GL_LINE);
+	return rectangle;
+}
+
+
+
+
+
+
 
 float camera_rotation_angle = 90;
 float rectangle_rotation = 0;
@@ -395,13 +456,13 @@ void draw ()
   glm::vec3 up (0, 1, 0);
   Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
   glm::mat4 VP = Matrices.projection * Matrices.view;
-  glm::mat4 MVP;	// MVP = Projection * View * Model
+  glm::mat4 MVP;	
 
   float transx,transy;
   transx=-3.3f;//75;
   transy=3.3f;//75;
 
-  for(int i=0;i<15;i++)
+/*  for(int i=0;i<15;i++)
   {
 	  
 	  Matrices.model = glm::mat4(1.0f);
@@ -451,15 +512,124 @@ void draw ()
 	  cout<<transx<<endl;
 	    if(transx<=3.4f && transx>=3.2f)
 	    {
-		  transx=-3.3f;//75;//*(double)1.8;
-		  transy-=2.2f;//(double)1.2;
+		  transx=-3.3f;
+		  transy-=2.2f;
 	    }  
 	  else
 		  transx+=2.2f;//(double)1.2;
+	  //objects[0]->vertex_buffer_data[0]<<" "<<objects[0]->vertex_buffer_data[1]<<" "<<objects[0]->vertex_buffer_data[2]<<endl;
   }
+  */
   firsttime=0;
+  //Matrices.model = glm::mat4(1.0f);
+ // glm::mat4 translateTriangle = glm::translate (glm::vec3(-5.0f, 5.0f, 0.0f)); 
+ // Matrices.model*=translateTriangle;
+ // MVP = VP * Matrices.model; // MVP = p * V * M
+ // glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+ // draw3DObject(triangletemp);
 
 
+
+
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 translateRectangle = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f)); 
+  Matrices.model*=translateRectangle;
+  MVP = VP * Matrices.model; // MVP = p * V * M
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(rectangletemp);
+	  
+  
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 translateground = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f)); 
+  Matrices.model*=translateground;
+  MVP = VP * Matrices.model; // MVP = p * V * M
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(ground);
+	  
+	 
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 translatesky = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f)); 
+  Matrices.model*=translatesky;
+  MVP = VP * Matrices.model; // MVP = p * V * M
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(sky);
+	  
+
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 translatetankoutline1 = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f)); 
+  Matrices.model*=translatetankoutline1;
+  MVP = VP * Matrices.model; // MVP = p * V * M
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(tankoutline);
+
+
+
+
+
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 translatetank3 = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f)); 
+  Matrices.model*=translatetank3;
+  MVP = VP * Matrices.model; // MVP = p * V * M
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(tank3);
+
+
+
+
+
+
+
+
+
+
+  for(int i=0;i<5;i++)
+  {
+	  Matrices.model = glm::mat4(1.0f);
+  	  glm::mat4 translatecircle = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f)); 
+   	  Matrices.model*=translatecircle;
+          MVP = VP * Matrices.model; // MVP = p * V * M
+          glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+          draw3DObject(circle[i]);
+	  
+  }
+	  Matrices.model = glm::mat4(1.0f);
+  	  glm::mat4 tendcircle1 = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f)); 
+   	  Matrices.model*=tendcircle1;
+          MVP = VP * Matrices.model; // MVP = p * V * M
+          glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+          draw3DObject(endcircle1);
+	  
+	  Matrices.model = glm::mat4(1.0f);
+  	  glm::mat4 tendcircle2 = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f)); 
+   	  Matrices.model*=tendcircle2;
+          MVP = VP * Matrices.model; // MVP = p * V * M
+          glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+          draw3DObject(endcircle2);
+	  
+
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 translatetank1 = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f)); 
+  Matrices.model*=translatetank1;
+  MVP = VP * Matrices.model; // MVP = p * V * M
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(tank1);
+	  
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 translatetank2 = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f)); 
+  Matrices.model*=translatetank2;
+  MVP = VP * Matrices.model; // MVP = p * V * M
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(tank2);
+
+
+
+
+
+	  
+	  
+	  
+
+  
  /* glm::mat4 translateTriangle = glm::translate (glm::vec3(-2.0f, 0.0f, 0.0f)); // glTranslatef
   glm::mat4 rotateTriangle = glm::rotate((float)(triangle_rotation*M_PI/180.0f), glm::vec3(0,1,0));  // rotate about vector (1,0,0)
   glm::mat4 triangleTransform =  translateTriangle * rotateTriangle;
@@ -541,7 +711,7 @@ void initGL (GLFWwindow* window, int width, int height)
 
 	for(int i=0;i<15;i++)
 	{
-		objects[i]=createRectangle (); // Generate the VAO, VBOs, vertices data & copy into the array buffer
+		objects[i]=createRectangle(.545f,.27f,.07f, .134f,.545f,.134f,  -1,-1,  1,-1,  -1,1,  1,1) ; 
 		objects[i]->objnum=i+1;
 	  	objects[i]->x1=-1;
 	  	objects[i]->x2=1;
@@ -555,8 +725,29 @@ void initGL (GLFWwindow* window, int width, int height)
 	  
 		
 	}
-		//createRectangle ();
+	triangletemp=createTriangle(.545f,.27f,.07f, .134f,.545f,.134f, 0,1 , -1,-1 , 1,-1);
+	rectangletemp=createRectangle(.545f,.27f,.07f, .134f,.545f,.134f, -10,-9,  10,-9,  -10,-8,  10,-8); 
+	ground=createRectangle(.545f,.411f,.07f, .545f,.27f,.07f,-10,-10,  10,-10,  -10,-9,  10,-9);
+	sky=createRectangle(.596f,.96f,1,.117f,.564f,1, -10,-8,  10,-8,  -10,10,  10,10);                  //colours bottom first.
 	
+	GLfloat posx=-8.5f;
+	for(int i=0;i<5;i++)
+	{
+
+		circle[i]=createCircle(posx,-7.8f,0.0f,.2,108);
+		posx+=0.45;
+	}
+	endcircle1=createCircle(-8.75f,-7.6f,0.0f,.12f,108);
+	endcircle2=createCircle(-6.4f,-7.6f,0.0f,.12f,108);
+
+	tank1 = createRectangle(0.317f,0.317f,0.317f,0.317f,0.317f,0.317f, -9+.2f,-7.5 , -6.6+0.2f,-7.5, -8.7f+0.2f,-7.3f, -6.9f+0.2f,-7.3);
+	
+	tank2 = createRectangle(0.317f,0.317f,0.317f,0.317f,0.317f,0.317f, -9+.2f,-7.5 , -6.6+0.2f,-7.5, -8.7f+0.2f,-7.8f, -6.9f+0.2f,-7.8f);
+
+	tankoutline = createRectangle(0.666f,0.666f,0.666f,0.666f,0.666f,0.666f, -9.0f,-7.5f, -6.2f,-7.5f, -8.7f,-7.96f, -6.5f,-7.96f);
+	
+	tank3 = createRectangle(0,0,0,0,0,0, -8.7+.8f,-7.3 , -7.6+0.8f,-7.3, -8.6f+0.8f,-7.1f, -7.7f+0.8f,-7.1f);
+
 	// Create and compile our GLSL program from the shaders
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
 	// Get a handle for our "MVP" uniform
@@ -566,7 +757,7 @@ void initGL (GLFWwindow* window, int width, int height)
 	reshapeWindow (window, width, height);
 
     // Background color of the scene
-	glClearColor (0.8f, 0.0f, 0.0f, 0.0f); // R, G, B, A
+	glClearColor (1.0f, 1.0f, 1.0f, 1.0f); // R, G, B, A
 	glClearDepth (1.0f);
 
 	glEnable (GL_DEPTH_TEST);
