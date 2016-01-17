@@ -2,10 +2,8 @@
 #include <cmath>
 #include <fstream>
 #include <vector>
-
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
@@ -13,13 +11,7 @@
 
 using namespace std;
 
-int N = 20;
-int markedobj=-1;
-int firsttime=1;
-float centerx = 3.3;
-float centery = -3.3;
-int horimove = 0;
-int vermove = 0;
+float camera_rotation_angle = 90;
 struct VAO {
     GLuint VertexArrayID;
     GLuint VertexBuffer;
@@ -28,10 +20,6 @@ struct VAO {
     GLenum PrimitiveMode;
     GLenum FillMode;
     int NumVertices;
-    int objnum;
-    float x1,x2,x3,x4,y1,y2,y3,y4;
-    float translatex;
-    float translatey;
 };
 typedef struct VAO VAO;
 
@@ -44,18 +32,31 @@ struct GLMatrices {
 
 GLuint programID;
 
+int N = 20;
 
-VAO * objects[100],*triangletemp,*rectangletemp,*ground,*sky,*circle[20],*tank1,*tank2,*tank3,*endcircle1,*endcircle2,*tankoutline;
+float TRANSLATE_TANK_BY = 0.0f;
+float TANK_POS_X=0.0f;
+float TURRET_ANGLE = 40;
+float ROTATE_TURRET_BY = 0;
+
+float VELOCITY = .5f;
+float BALL_POS_X = TANK_POS_X;
+float BALL_POS_Y = 0.0f;
+float DECELERATION = 0.1f;
+float BALL_VEL_X = 0.0f;
+float BALL_VEL_Y = 0.0f;
 
 
-/* Function to load Shaders - Use it as it is */
+int SHOW_BALL = 1;
+int SHOW_CHAINS = 1;
+
+
+VAO * objects[100],*GROUND,*SKY,*WHEELS[20],*TANK_BODY_UPPER,*TANK_BODY_LOWER,*TANK_TURRET_BASE,*TANK_SPROCKET_LEFT,*TANK_SPROCKET_RIGHT,*TANK_TRACK,*TANK_TURRET,*TANK_TURRET_END,*BALL,*ENEMY_WALL_1,*CHAINS[20];
+
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path) {
 
-	// Create the shaders
 	GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
 	GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
-
-	// Read the Vertex Shader code from the file
 	std::string VertexShaderCode;
 	std::ifstream VertexShaderStream(vertex_file_path, std::ios::in);
 	if(VertexShaderStream.is_open())
@@ -65,8 +66,6 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
 			VertexShaderCode += "\n" + Line;
 		VertexShaderStream.close();
 	}
-
-	// Read the Fragment Shader code from the file
 	std::string FragmentShaderCode;
 	std::ifstream FragmentShaderStream(fragment_file_path, std::ios::in);
 	if(FragmentShaderStream.is_open()){
@@ -75,53 +74,38 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
 			FragmentShaderCode += "\n" + Line;
 		FragmentShaderStream.close();
 	}
-
 	GLint Result = GL_FALSE;
 	int InfoLogLength;
-
-	// Compile Vertex Shader
 	printf("Compiling shader : %s\n", vertex_file_path);
 	char const * VertexSourcePointer = VertexShaderCode.c_str();
 	glShaderSource(VertexShaderID, 1, &VertexSourcePointer , NULL);
 	glCompileShader(VertexShaderID);
-
-	// Check Vertex Shader
 	glGetShaderiv(VertexShaderID, GL_COMPILE_STATUS, &Result);
 	glGetShaderiv(VertexShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
 	std::vector<char> VertexShaderErrorMessage(InfoLogLength);
 	glGetShaderInfoLog(VertexShaderID, InfoLogLength, NULL, &VertexShaderErrorMessage[0]);
 	fprintf(stdout, "%s\n", &VertexShaderErrorMessage[0]);
-
-	// Compile Fragment Shader
 	printf("Compiling shader : %s\n", fragment_file_path);
 	char const * FragmentSourcePointer = FragmentShaderCode.c_str();
 	glShaderSource(FragmentShaderID, 1, &FragmentSourcePointer , NULL);
 	glCompileShader(FragmentShaderID);
-
-	// Check Fragment Shader
 	glGetShaderiv(FragmentShaderID, GL_COMPILE_STATUS, &Result);
 	glGetShaderiv(FragmentShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
 	std::vector<char> FragmentShaderErrorMessage(InfoLogLength);
 	glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, &FragmentShaderErrorMessage[0]);
 	fprintf(stdout, "%s\n", &FragmentShaderErrorMessage[0]);
-
-	// Link the program
 	fprintf(stdout, "Linking program\n");
 	GLuint ProgramID = glCreateProgram();
 	glAttachShader(ProgramID, VertexShaderID);
 	glAttachShader(ProgramID, FragmentShaderID);
 	glLinkProgram(ProgramID);
-
-	// Check the program
 	glGetProgramiv(ProgramID, GL_LINK_STATUS, &Result);
 	glGetProgramiv(ProgramID, GL_INFO_LOG_LENGTH, &InfoLogLength);
 	std::vector<char> ProgramErrorMessage( max(InfoLogLength, int(1)) );
 	glGetProgramInfoLog(ProgramID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
 	fprintf(stdout, "%s\n", &ProgramErrorMessage[0]);
-
 	glDeleteShader(VertexShaderID);
 	glDeleteShader(FragmentShaderID);
-
 	return ProgramID;
 }
 
@@ -137,21 +121,15 @@ void quit(GLFWwindow *window)
     exit(EXIT_SUCCESS);
 }
 
-
-/* Generate VAO, VBOs and return VAO handle */
 struct VAO* create3DObject (GLenum primitive_mode, int numVertices, const GLfloat* vertex_buffer_data, const GLfloat* color_buffer_data, GLenum fill_mode=GL_FILL)
 {
     struct VAO* vao = new struct VAO;
     vao->PrimitiveMode = primitive_mode;
     vao->NumVertices = numVertices;
     vao->FillMode = fill_mode;
-
-    // Create Vertex Array Object
-    // Should be done after CreateWindow and before any other GL calls
     glGenVertexArrays(1, &(vao->VertexArrayID)); // VAO
     glGenBuffers (1, &(vao->VertexBuffer)); // VBO - vertices
     glGenBuffers (1, &(vao->ColorBuffer));  // VBO - colors
-
     glBindVertexArray (vao->VertexArrayID); // Bind the VAO 
     glBindBuffer (GL_ARRAY_BUFFER, vao->VertexBuffer); // Bind the VBO vertices 
     glBufferData (GL_ARRAY_BUFFER, 3*numVertices*sizeof(GLfloat), vertex_buffer_data, GL_STATIC_DRAW); // Copy the vertices into VBO
@@ -178,7 +156,6 @@ struct VAO* create3DObject (GLenum primitive_mode, int numVertices, const GLfloa
     return vao;
 }
 
-/* Generate VAO, VBOs and return VAO handle - Common Color for all vertices */
 struct VAO* create3DObject (GLenum primitive_mode, int numVertices, const GLfloat* vertex_buffer_data, const GLfloat red, const GLfloat green, const GLfloat blue, GLenum fill_mode=GL_FILL)
 {
     GLfloat* color_buffer_data = new GLfloat [3*numVertices];
@@ -191,122 +168,71 @@ struct VAO* create3DObject (GLenum primitive_mode, int numVertices, const GLfloa
     return create3DObject(primitive_mode, numVertices, vertex_buffer_data, color_buffer_data, fill_mode);
 }
 
-/* Render the VBOs handled by VAO */
-
 void draw3DObject (struct VAO* vao)
 {
-    // Change the Fill Mode for this object
     glPolygonMode (GL_FRONT_AND_BACK, vao->FillMode);
-
-    // Bind the VAO to use
     glBindVertexArray (vao->VertexArrayID);
-
-    // Enable Vertex Attribute 0 - 3d Vertices
     glEnableVertexAttribArray(0);
-    // Bind the VBO to use
     glBindBuffer(GL_ARRAY_BUFFER, vao->VertexBuffer);
-
-    // Enable Vertex Attribute 1 - Color
     glEnableVertexAttribArray(1);
-    // Bind the VBO to use
     glBindBuffer(GL_ARRAY_BUFFER, vao->ColorBuffer);
-
-    // Draw the geometry !
-    glDrawArrays(vao->PrimitiveMode, 0, vao->NumVertices); // Starting from vertex 0; 3 vertices total -> 1 triangle
+    glDrawArrays(vao->PrimitiveMode, 0, vao->NumVertices);
 }
-
-/**************************
- * Customizable functions *
- **************************/
 
 float triangle_rot_dir = 5;
 float rectangle_rot_dir = 5;
-
-bool triangle_rot_status = false;  // variables for the triangle
+bool triangle_rot_status = false;
 bool rectangle_rot_status = false;
 
-/* Executed when a regular key is pressed/released/held-down */
-/* Prefered for Keyboard events */
 void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-     // Function is called first on GLFW_PRESS.
-
     if (action == GLFW_RELEASE) {
-        switch (key) {
-            case GLFW_KEY_UP:                        //key responses
-                rectangle_rot_status = false;//!rectangle_rot_status;
-                break;
-            case GLFW_KEY_DOWN:
-                rectangle_rot_status = false;
-                break;
-            default:
-                break;
+	    switch (key) 
+	    {
+		    case GLFW_KEY_UP:
+			    ROTATE_TURRET_BY=0;
+			    break;
+		    case GLFW_KEY_DOWN:
+			    ROTATE_TURRET_BY=0;
+			    break;
+		    case GLFW_KEY_LEFT:
+			    TRANSLATE_TANK_BY = 0.0f;
+			    break;
+		    case GLFW_KEY_RIGHT:
+			   TRANSLATE_TANK_BY = 0.0f; 
+			    break;
+		    default:
+			    break;
         }
     }
     else if (action == GLFW_PRESS) {
-        switch (key) 
-	{
-		case GLFW_KEY_UP:
-			for(int i=0;i<15;i++)
-			{
-				if(objects[i]->x1<=centerx && objects[i]->x2>=centerx && objects[i]->x3>=centerx && objects[i]->x4<=centerx)
-					if(objects[i]->y1<=centery-2.2 && objects[i]->y2<=centery-2.2 && objects[i]->y3>=centery-2.2 && objects[i]->y4>=centery-2.2)
-					{
-						markedobj=i;
-						horimove=0;vermove=1;
-					}
-			}
-			//rectangle_rot_dir=5;
-			//rectangle_rot_status = true;//rectangle_rot_status;
-			break;
-		case GLFW_KEY_LEFT:
-			for(int i=0;i<15;i++)
-			{
-				if(objects[i]->x1<=centerx+2.2 && objects[i]->x2>=centerx+2.2 && objects[i]->x3>=centerx+2.2 && objects[i]->x4<=centerx+2.2)
-					if(objects[i]->y1<=centery && objects[i]->y2<=centery && objects[i]->y3>=centery && objects[i]->y4>=centery)
-					{
-						markedobj=i;
-						horimove=-1;vermove=0;
-					}
-			}
-			//rectangle_rot_dir=-5;
-			//rectangle_rot_status=true;
-			break;
-		case GLFW_KEY_RIGHT:
-			for(int i=0;i<15;i++)
-			{
-				if(objects[i]->x1<=centerx-2.2 && objects[i]->x2>=centerx-2.2 && objects[i]->x3>=centerx-2.2 && objects[i]->x4<=centerx-2.2)
-					if(objects[i]->y1<=centery && objects[i]->y2<=centery && objects[i]->y3>=centery && objects[i]->y4>=centery)
-					{
-						markedobj=i;
-						horimove=1;vermove=0;
-					}
-			}
-			break;
-		case GLFW_KEY_DOWN:
-			for(int i=0;i<15;i++)
-			{
-				if(objects[i]->x1<=centerx && objects[i]->x2>=centerx && objects[i]->x3>=centerx && objects[i]->x4<=centerx)
-					if(objects[i]->y1<=centery+2.2 && objects[i]->y2<=centery+2.2 && objects[i]->y3>=centery+2.2 && objects[i]->y4>=centery+2.2)
-					{
-						markedobj=i;
-						horimove=0;vermove=-1;
-					}
-			}
-			break;
-
-
-			
-		case GLFW_KEY_ESCAPE:
-                quit(window);
-                break;
-            default:
-                break;
-        }
+	    switch (key) 
+	    {
+		    case GLFW_KEY_UP:
+			   ROTATE_TURRET_BY += 1.0f; 
+			    break;
+		    case GLFW_KEY_DOWN:
+			    ROTATE_TURRET_BY += -1;
+			    break;
+		    case GLFW_KEY_LEFT:
+			    TRANSLATE_TANK_BY = -0.1f;
+			    break;
+		    case GLFW_KEY_RIGHT:
+			    TRANSLATE_TANK_BY = 0.1f;
+			    break;
+		    case GLFW_KEY_SPACE:
+			    BALL_POS_Y = 0.0f;
+			    BALL_POS_X = TANK_POS_X;
+			    BALL_VEL_X = VELOCITY * cos( TURRET_ANGLE * M_PI/180.0);
+			    BALL_VEL_Y = VELOCITY * sin( TURRET_ANGLE * M_PI/180.0);
+		            DECELERATION = BALL_VEL_Y/15.0;
+			    SHOW_BALL = 1;
+		    default:
+			    break;
+	    }
     }
 }
 
-/* Executed for character input (like in text boxes) */
 void keyboardChar (GLFWwindow* window, unsigned int key)
 {
 	switch (key) {
@@ -319,7 +245,6 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
 	}
 }
 
-/* Executed when a mouse button is pressed/released */
 void mouseButton (GLFWwindow* window, int button, int action, int mods)
 {
     switch (button) {
@@ -337,37 +262,18 @@ void mouseButton (GLFWwindow* window, int button, int action, int mods)
     }
 }
 
-/* Executed when window is resized to 'width' and 'height' */
-/* Modify the bounds of the screen here in glm::ortho or Field of View in glm::Perspective */
 void reshapeWindow (GLFWwindow* window, int width, int height)
 {
     int fbwidth=width, fbheight=height;
-    /* With Retina display on Mac OS X, GLFW's FramebufferSize
-     is different from WindowSize */
     glfwGetFramebufferSize(window, &fbwidth, &fbheight);
-
-	GLfloat fov = 90.0f;
-
-	// sets the viewport of openGL renderer
-	glViewport (0, 0, (GLsizei) fbwidth, (GLsizei) fbheight);
-
-	// set the projection matrix as perspective
-	/* glMatrixMode (GL_PROJECTION);
-	   glLoadIdentity ();
-	   gluPerspective (fov, (GLfloat) fbwidth / (GLfloat) fbheight, 0.1, 500.0); */
-	// Store the projection matrix in a variable for future use
-    // Perspective projection for 3D views
-    // Matrices.projection = glm::perspective (fov, (GLfloat) fbwidth / (GLfloat) fbheight, 0.1f, 500.0f);
-
-    // Ortho projection for 2D views
+    GLfloat fov = 90.0f;
+    glViewport (0, 0, (GLsizei) fbwidth, (GLsizei) fbheight);
     Matrices.projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 500.0f);
 }
-
 
 VAO * createCircle( GLfloat x, GLfloat y, GLfloat z, GLfloat radius, GLint numberOfSides )
 {
     int numberOfVertices = numberOfSides + 2,i;
-
     GLfloat twicePi = 2.0f * M_PI;
 
     GLfloat circleVerticesX[numberOfVertices];
@@ -394,19 +300,13 @@ VAO * createCircle( GLfloat x, GLfloat y, GLfloat z, GLfloat radius, GLint numbe
         allCircleVertices[( i * 3 ) + 1] = circleVerticesY[i];
         allCircleVertices[( i * 3 ) + 2] = circleVerticesZ[i];
     }
-    printf("%d\n",i);
     for (int j=0;j<330;j++)
     {
 	allCircleColors[j]=.517f;
     }
     VAO * tempcircle = create3DObject(GL_TRIANGLE_FAN,110, allCircleVertices, allCircleColors, GL_TRIANGLES);
     return tempcircle;
-    /*glEnableClientState( GL_VERTEX_ARRAY );
-    glVertexPointer( 3, GL_FLOAT, 0, allCircleVertices );
-    glDrawArrays( GL_TRIANGLE_FAN, 0, numberOfVertices);
-    glDisableClientState( GL_VERTEX_ARRAY );*/
 }
-
 
 VAO * createTriangle (float r1,float g1,float b1,float r2,float g2,float b2,float x1,float y1,float x2,float y2,float x3,float y3)
 {
@@ -437,16 +337,6 @@ VAO * createRectangleOutline (float r1,float g1,float b1,float r2,float g2,float
 	return rectangle;
 }
 
-
-
-
-
-
-
-float camera_rotation_angle = 90;
-float rectangle_rotation = 0;
-float triangle_rotation = 0;
-
 void draw ()
 {
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -454,352 +344,240 @@ void draw ()
   glm::vec3 eye ( 5*cos(camera_rotation_angle*M_PI/180.0f), 0, 5*sin(camera_rotation_angle*M_PI/180.0f) );
   glm::vec3 target (0, 0, 0);
   glm::vec3 up (0, 1, 0);
-  Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
+  Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0));
   glm::mat4 VP = Matrices.projection * Matrices.view;
   glm::mat4 MVP;	
 
-  float transx,transy;
-  transx=-3.3f;//75;
-  transy=3.3f;//75;
-
-/*  for(int i=0;i<15;i++)
-  {
-	  
-	  Matrices.model = glm::mat4(1.0f);
-	  glm::mat4 translateRectangle;
-	  if(markedobj==i)
-	  {
-		  objects[i]->x1+=horimove*2.2;
-		  objects[i]->x2+=horimove*2.2;
-		  objects[i]->x3+=horimove*2.2;
-		  objects[i]->x4+=horimove*2.2;
-		  objects[i]->translatex+=horimove*2.2;
-		  centerx-=horimove*2.2;
-		  markedobj=-1;
-
-		  objects[i]->y1+=vermove*2.2;
-		  objects[i]->y2+=vermove*2.2;
-		  objects[i]->y3+=vermove*2.2;
-		  objects[i]->y4+=vermove*2.2;
-		  objects[i]->translatey+=vermove*2.2;
-		  centery-=vermove*2.2;
-		  markedobj=-1;
-
-	  }
-	  if(firsttime)
-	  {
-		  objects[i]->x1+=transx;
-	  	  objects[i]->x2+=transx;
-		  objects[i]->x3+=transx;
-		  objects[i]->x4+=transx;
-	
-	  	  objects[i]->y1+=transy;
-	  	  objects[i]->y2+=transy;
-	  	  objects[i]->y3+=transy;
-	  	  objects[i]->y4+=transy;
-
-		  objects[i]->translatex=transx;
-		  objects[i]->translatey=transy;
-
-	  }
-	  translateRectangle = glm::translate (glm::vec3(objects[i]->translatex,objects[i]->translatey, 0));        // glTranslatef
-	  
-	  //glm::mat4 rotateRectangle = glm::rotate((float)(rectangle_rotation*M_PI/180.0f), glm::vec3(0,0,1)); // rotate about vector (-1,1,1)
-  	  Matrices.model *= translateRectangle;//rotateRectangle;//translateRectangle * rotateRectangle;
-	  MVP = VP * Matrices.model;
-	  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-	  draw3DObject(objects[i]);
-	  cout<<transx<<endl;
-	    if(transx<=3.4f && transx>=3.2f)
-	    {
-		  transx=-3.3f;
-		  transy-=2.2f;
-	    }  
-	  else
-		  transx+=2.2f;//(double)1.2;
-	  //objects[0]->vertex_buffer_data[0]<<" "<<objects[0]->vertex_buffer_data[1]<<" "<<objects[0]->vertex_buffer_data[2]<<endl;
-  }
-  */
-  firsttime=0;
-  //Matrices.model = glm::mat4(1.0f);
- // glm::mat4 translateTriangle = glm::translate (glm::vec3(-5.0f, 5.0f, 0.0f)); 
- // Matrices.model*=translateTriangle;
- // MVP = VP * Matrices.model; // MVP = p * V * M
- // glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
- // draw3DObject(triangletemp);
-
-
-
-
   Matrices.model = glm::mat4(1.0f);
-  glm::mat4 translateRectangle = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f)); 
+  glm::mat4 translateRectangle = glm::translate (glm::vec3(0.0f, -1.0f, 0.0f)); 
   Matrices.model*=translateRectangle;
-  MVP = VP * Matrices.model; // MVP = p * V * M
+  MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(rectangletemp);
+  draw3DObject(GROUND);
 	  
-  
-  Matrices.model = glm::mat4(1.0f);
-  glm::mat4 translateground = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f)); 
-  Matrices.model*=translateground;
-  MVP = VP * Matrices.model; // MVP = p * V * M
-  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(ground);
-	  
-	 
   Matrices.model = glm::mat4(1.0f);
   glm::mat4 translatesky = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f)); 
   Matrices.model*=translatesky;
-  MVP = VP * Matrices.model; // MVP = p * V * M
+  MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(sky);
-	  
+  draw3DObject(SKY);
 
   Matrices.model = glm::mat4(1.0f);
-  glm::mat4 translatetankoutline1 = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f)); 
+  glm::mat4 translatetankoutline1 = glm::translate (glm::vec3(TANK_POS_X, -1.0f, 0.0f)); 
   Matrices.model*=translatetankoutline1;
-  MVP = VP * Matrices.model; // MVP = p * V * M
+  MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(tankoutline);
-
-
-
+  draw3DObject(TANK_TRACK);
 
 
   Matrices.model = glm::mat4(1.0f);
-  glm::mat4 translatetank3 = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f)); 
-  Matrices.model*=translatetank3;
-  MVP = VP * Matrices.model; // MVP = p * V * M
+  glm::mat4 rotatetankturret = glm::rotate((float)(TURRET_ANGLE*M_PI/180.0f), glm::vec3(0,0,1));
+  glm::mat4 translatetankturret = glm::translate (glm::vec3(TANK_POS_X-7.2f, -7.3f-1.0f, 0.0f)); 
+  Matrices.model*=translatetankturret*rotatetankturret;
+  MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(tank3);
+  draw3DObject(TANK_TURRET);
+ 
+
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 translatetankturretend = glm::translate (glm::vec3(TANK_POS_X-7.2f, -7.3f-1.0f, 0.0f)); 
+  Matrices.model*=translatetankturretend*rotatetankturret;
+  MVP = VP * Matrices.model;
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]); 
+  draw3DObject(TANK_TURRET_END);
 
 
 
+  TURRET_ANGLE += ROTATE_TURRET_BY;
+  if(TURRET_ANGLE >= 90)
+	 TURRET_ANGLE = 90.0f;
+  if(TURRET_ANGLE <= 20)
+	 TURRET_ANGLE = 20.0f;
 
-
-
-
-
-
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 translatetank3 = glm::translate (glm::vec3(TANK_POS_X, -1.0f, 0.0f)); 
+  Matrices.model*=translatetank3;
+  MVP = VP * Matrices.model;
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(TANK_TURRET_BASE);
 
   for(int i=0;i<5;i++)
   {
 	  Matrices.model = glm::mat4(1.0f);
-  	  glm::mat4 translatecircle = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f)); 
+  	  glm::mat4 translatecircle = glm::translate (glm::vec3(TANK_POS_X, -1.0f, 0.0f)); 
    	  Matrices.model*=translatecircle;
-          MVP = VP * Matrices.model; // MVP = p * V * M
+          MVP = VP * Matrices.model;
           glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-          draw3DObject(circle[i]);
-	  
+          draw3DObject(WHEELS[i]);
   }
 	  Matrices.model = glm::mat4(1.0f);
-  	  glm::mat4 tendcircle1 = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f)); 
+  	  glm::mat4 tendcircle1 = glm::translate (glm::vec3(TANK_POS_X, -1.0f, 0.0f)); 
    	  Matrices.model*=tendcircle1;
-          MVP = VP * Matrices.model; // MVP = p * V * M
+          MVP = VP * Matrices.model;
           glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-          draw3DObject(endcircle1);
+          draw3DObject(TANK_SPROCKET_LEFT);
 	  
 	  Matrices.model = glm::mat4(1.0f);
-  	  glm::mat4 tendcircle2 = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f)); 
+  	  glm::mat4 tendcircle2 = glm::translate (glm::vec3(TANK_POS_X, -1.0f, 0.0f)); 
    	  Matrices.model*=tendcircle2;
-          MVP = VP * Matrices.model; // MVP = p * V * M
+          MVP = VP * Matrices.model;
           glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-          draw3DObject(endcircle2);
+          draw3DObject(TANK_SPROCKET_RIGHT);
 	  
 
   Matrices.model = glm::mat4(1.0f);
-  glm::mat4 translatetank1 = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f)); 
+  glm::mat4 translatetank1 = glm::translate (glm::vec3(TANK_POS_X, -1.0f, 0.0f)); 
   Matrices.model*=translatetank1;
-  MVP = VP * Matrices.model; // MVP = p * V * M
-  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(tank1);
-	  
-  Matrices.model = glm::mat4(1.0f);
-  glm::mat4 translatetank2 = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f)); 
-  Matrices.model*=translatetank2;
-  MVP = VP * Matrices.model; // MVP = p * V * M
-  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(tank2);
-
-
-
-
-
-	  
-	  
-	  
-
-  
- /* glm::mat4 translateTriangle = glm::translate (glm::vec3(-2.0f, 0.0f, 0.0f)); // glTranslatef
-  glm::mat4 rotateTriangle = glm::rotate((float)(triangle_rotation*M_PI/180.0f), glm::vec3(0,1,0));  // rotate about vector (1,0,0)
-  glm::mat4 triangleTransform =  translateTriangle * rotateTriangle;
-  Matrices.model *= triangleTransform; 
-  MVP = VP * Matrices.model; // MVP = p * V * M
-  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(objects[0]);
-
-  Matrices.model = glm::mat4(1.0f);
-  glm::mat4 translateRectangle = glm::translate (glm::vec3(2, 0, 0));        // glTranslatef
-  glm::mat4 rotateRectangle = glm::rotate((float)(rectangle_rotation*M_PI/180.0f), glm::vec3(0,0,1)); // rotate about vector (-1,1,1)
-  Matrices.model *= rotateRectangle;//translateRectangle * rotateRectangle;
   MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(objects[1]);
-*/
-  // Increment angles
-  float increments = 1;
+  draw3DObject(TANK_BODY_UPPER);
+	  
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 translatetank2 = glm::translate (glm::vec3(TANK_POS_X, -1.0f, 0.0f)); 
+  Matrices.model*=translatetank2;
+  MVP = VP * Matrices.model;
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(TANK_BODY_LOWER);
+  
 
-  //camera_rotation_angle++; // Simulating camera rotation
-  triangle_rotation = triangle_rotation + increments*triangle_rot_dir*triangle_rot_status;
-  rectangle_rotation = rectangle_rotation + increments*rectangle_rot_dir*rectangle_rot_status;
+  TANK_POS_X += TRANSLATE_TANK_BY;
+
+  if(SHOW_BALL)
+  {
+	  Matrices.model = glm::mat4(1.0f);
+	  glm::mat4 translateball = glm::translate (glm::vec3(BALL_POS_X-6.9f, BALL_POS_Y-6.9f-1.0f, 0.0f)); 
+	  Matrices.model*=translateball*rotatetankturret;
+	  MVP = VP * Matrices.model;
+	  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+	  draw3DObject(BALL);
+  }
+
+  BALL_POS_X += BALL_VEL_X;
+  BALL_POS_Y += BALL_VEL_Y;
+  BALL_VEL_Y-=DECELERATION;
+  if(BALL_POS_Y<=-2.6)
+	   SHOW_BALL = 0;
+
+  if(BALL_POS_X-6.9f >=7.5f && BALL_POS_X <= 10.0f && BALL_POS_Y <= -6.7)
+  {
+	  SHOW_CHAINS = 0;
+  }
+
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 rotateenemywall1 = glm::rotate((float)(10.0*M_PI/180.0f), glm::vec3(0,0,1));
+  glm::mat4 tenemywall1 = glm::translate (glm::vec3(8.0, -9.0f, 0.0f)); 
+  Matrices.model*=tenemywall1*rotateenemywall1;
+  MVP = VP * Matrices.model;
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(ENEMY_WALL_1);
+
+
+  if(SHOW_CHAINS)
+  {
+	  for(int i=0;i<13;i++)
+	  {
+		  Matrices.model = glm::mat4(1.0f);
+		  glm::mat4 translatechains = glm::translate (glm::vec3(7.7, -7.1f, 0.0f)); 
+		  Matrices.model*=translatechains;
+		  MVP = VP * Matrices.model;
+		  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+		  draw3DObject(CHAINS[i]);
+	  }
+  }
 }
 
-/* Initialise glfw window, I/O callbacks and the renderer to use */
-/* Nothing to Edit here */
 GLFWwindow* initGLFW (int width, int height)
 {
-    GLFWwindow* window; // window desciptor/handle
-
+    GLFWwindow* window;
     glfwSetErrorCallback(error_callback);
     if (!glfwInit()) {
         exit(EXIT_FAILURE);
     }
-
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
     window = glfwCreateWindow(width, height, "Sample OpenGL 3.3 Application", NULL, NULL);
-
     if (!window) {
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
-
     glfwMakeContextCurrent(window);
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
     glfwSwapInterval( 1 );
-
-    /* --- register callbacks with GLFW --- */
-
-    /* Register function to handle window resizes */
-    /* With Retina display on Mac OS X GLFW's FramebufferSize
-     is different from WindowSize */
     glfwSetFramebufferSizeCallback(window, reshapeWindow);
     glfwSetWindowSizeCallback(window, reshapeWindow);
-
-    /* Register function to handle window close */
     glfwSetWindowCloseCallback(window, quit);
-
-    /* Register function to handle keyboard input */
-    glfwSetKeyCallback(window, keyboard);      // general keyboard input
-    glfwSetCharCallback(window, keyboardChar);  // simpler specific character handling
-
-    /* Register function to handle mouse click */
-    glfwSetMouseButtonCallback(window, mouseButton);  // mouse button clicks
-
+    glfwSetKeyCallback(window, keyboard); 
+    glfwSetCharCallback(window, keyboardChar);
+    glfwSetMouseButtonCallback(window, mouseButton);
     return window;
 }
 
-/* Initialize the OpenGL rendering properties */
-/* Add all the models to be created here */
 void initGL (GLFWwindow* window, int width, int height)
 {
-    /* Objects should be created before any other gl function and shaders */
-	// Create the models
 
-	for(int i=0;i<15;i++)
-	{
-		objects[i]=createRectangle(.545f,.27f,.07f, .134f,.545f,.134f,  -1,-1,  1,-1,  -1,1,  1,1) ; 
-		objects[i]->objnum=i+1;
-	  	objects[i]->x1=-1;
-	  	objects[i]->x2=1;
-	  	objects[i]->x3=1;
-	  	objects[i]->x4=-1;
-
-	  	objects[i]->y1=-1;
-	  	objects[i]->y2=-1;
-	  	objects[i]->y3=1;
-	  	objects[i]->y4=1;
-	  
-		
-	}
-	triangletemp=createTriangle(.545f,.27f,.07f, .134f,.545f,.134f, 0,1 , -1,-1 , 1,-1);
-	rectangletemp=createRectangle(.545f,.27f,.07f, .134f,.545f,.134f, -10,-9,  10,-9,  -10,-8,  10,-8); 
-	ground=createRectangle(.545f,.411f,.07f, .545f,.27f,.07f,-10,-10,  10,-10,  -10,-9,  10,-9);
-	sky=createRectangle(.596f,.96f,1,.117f,.564f,1, -10,-8,  10,-8,  -10,10,  10,10);                  //colours bottom first.
+	GROUND = createRectangle(.545f,.27f,.07f, .134f,.545f,.134f, -10,-9,  10,-9,  -10,-8,  10,-8); 
+	SKY = createRectangle(.596f,.96f,1,.117f,.564f,1, -10,-9.0f,  10,-9.0f,  -10,10,  10,10);                  //colours bottom first.
 	
 	GLfloat posx=-8.5f;
 	for(int i=0;i<5;i++)
 	{
-
-		circle[i]=createCircle(posx,-7.8f,0.0f,.2,108);
+		WHEELS[i]=createCircle(posx,-7.8f,0.0f,.2,108);
 		posx+=0.45;
 	}
-	endcircle1=createCircle(-8.75f,-7.6f,0.0f,.12f,108);
-	endcircle2=createCircle(-6.4f,-7.6f,0.0f,.12f,108);
+	TANK_SPROCKET_LEFT = createCircle(-8.75f,-7.6f,0.0f,.12f,108);
+	TANK_SPROCKET_RIGHT = createCircle(-6.4f,-7.6f,0.0f,.12f,108);
 
-	tank1 = createRectangle(0.317f,0.317f,0.317f,0.317f,0.317f,0.317f, -9+.2f,-7.5 , -6.6+0.2f,-7.5, -8.7f+0.2f,-7.3f, -6.9f+0.2f,-7.3);
+	TANK_BODY_UPPER= createRectangle(0.317f,0.317f,0.317f,0.317f,0.317f,0.317f, -9+.2f,-7.5 , -6.6+0.2f,-7.5, -8.7f+0.2f,-7.3f, -6.9f+0.2f,-7.3);
+	TANK_BODY_LOWER = createRectangle(0.317f,0.317f,0.317f,0.317f,0.317f,0.317f, -9+.2f,-7.5 , -6.6+0.2f,-7.5, -8.7f+0.2f,-7.8f, -6.9f+0.2f,-7.8f);
+	TANK_TRACK = createRectangle(0.666f,0.666f,0.666f,0.666f,0.666f,0.666f, -9.0f,-7.5f, -6.2f,-7.5f, -8.7f,-7.96f, -6.5f,-7.96f);
+	TANK_TURRET_BASE = createRectangle(0.156,0.156,0.156,0.156,0.156,0.156, -8.7+.8f,-7.3 , -7.6+0.8f,-7.3, -8.6f+0.8f,-7.1f, -7.7f+0.8f,-7.1f);
+	TANK_TURRET = createRectangle(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,  0.0f,-0.2f, 1.0f,-0.1f, 0.0f,0.2f, 1.0f,0.1f);
+	TANK_TURRET_END =createRectangle(0.15f,0.15f,0.15f,0.15f,0.15f,0.15f, 0.8f,-0.2f, 1.0f,-0.2f, 0.8f,0.2f, 1.0f,0.2f);
+
+	BALL = createCircle(1.5f,0.0f,0.0f,.3f,108);
+	ENEMY_WALL_1 = createRectangle(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,  -0.2f,0.0f, 0.2f,0.0f, -0.2f,2.0f, 0.2f,2.0f);
 	
-	tank2 = createRectangle(0.317f,0.317f,0.317f,0.317f,0.317f,0.317f, -9+.2f,-7.5 , -6.6+0.2f,-7.5, -8.7f+0.2f,-7.8f, -6.9f+0.2f,-7.8f);
+	float l_add = 0.0f;
+	for(int i=0;i<13;i++)
+	{
+		CHAINS[i]=createRectangleOutline(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f, -0.1f+l_add,0.0f, 0.0f+l_add,-0.1f, 0.0f+l_add,.1f, 0.1f+l_add,-0.0f);
+		l_add+=0.2f;
+	}
 
-	tankoutline = createRectangle(0.666f,0.666f,0.666f,0.666f,0.666f,0.666f, -9.0f,-7.5f, -6.2f,-7.5f, -8.7f,-7.96f, -6.5f,-7.96f);
-	
-	tank3 = createRectangle(0,0,0,0,0,0, -8.7+.8f,-7.3 , -7.6+0.8f,-7.3, -8.6f+0.8f,-7.1f, -7.7f+0.8f,-7.1f);
-
-	// Create and compile our GLSL program from the shaders
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
-	// Get a handle for our "MVP" uniform
 	Matrices.MatrixID = glGetUniformLocation(programID, "MVP");
-
-	
 	reshapeWindow (window, width, height);
-
-    // Background color of the scene
 	glClearColor (1.0f, 1.0f, 1.0f, 1.0f); // R, G, B, A
 	glClearDepth (1.0f);
-
 	glEnable (GL_DEPTH_TEST);
 	glDepthFunc (GL_LEQUAL);
-
-    cout << "VENDOR: " << glGetString(GL_VENDOR) << endl;
-    cout << "RENDERER: " << glGetString(GL_RENDERER) << endl;
-    cout << "VERSION: " << glGetString(GL_VERSION) << endl;
-    cout << "GLSL: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << endl;
+	cout << "VENDOR: " << glGetString(GL_VENDOR) << endl;
+	cout << "RENDERER: " << glGetString(GL_RENDERER) << endl;
+	cout << "VERSION: " << glGetString(GL_VERSION) << endl;
+	cout << "GLSL: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << endl;
 }
 
 int main (int argc, char** argv)
 {
 	int width = 800;
 	int height = 800;
-
-    GLFWwindow* window = initGLFW(width, height);
-
+	GLFWwindow* window = initGLFW(width, height);
 	initGL (window, width, height);
-
-    double last_update_time = glfwGetTime(), current_time;
-
-    /* Draw in loop */
-    while (!glfwWindowShouldClose(window)) {
-
-        // OpenGL Draw commands
-        draw();
-
-        // Swap Frame Buffer in double buffering
-        glfwSwapBuffers(window);
-
-        // Poll for Keyboard and mouse events
-        glfwPollEvents();
-
-        // Control based on time (Time based transformation like 5 degrees rotation every 0.5s)
-        current_time = glfwGetTime(); // Time in seconds
-        if ((current_time - last_update_time) >= 0.5) { // atleast 0.5s elapsed since last frame
-            // do something every 0.5 seconds ..
-            last_update_time = current_time;
-        }
-    }
-
+	double last_update_time = glfwGetTime(), current_time;
+	while (!glfwWindowShouldClose(window)) 
+	{
+		draw();
+        	glfwSwapBuffers(window);
+        	glfwPollEvents();
+        	current_time = glfwGetTime(); // Time in seconds
+        	if ((current_time - last_update_time) >= 0.5) 
+		{ 	// atleast 0.5s elapsed since last frame
+            		// do something every 0.5 seconds ..
+            		last_update_time = current_time;
+        	}
+	}
     glfwTerminate();
     exit(EXIT_SUCCESS);
 }
