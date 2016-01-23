@@ -32,18 +32,27 @@ struct GLMatrices {
 
 GLuint programID;
 
-
 //*****************************//
-//****** TANK VARIABLES *******//
+////********* TANK ************//
 //*****************************//
 
 float TRANSLATE_TANK_BY = 0.0f;
 float TANK_POS_X=0.0f;
 float TURRET_ANGLE = 40;
 float ROTATE_TURRET_BY = 0;
-
+float GUN_ANGLE;
+float BULLET_ANGLES[int(1e5)];
+float BULLET_POS_X[int(1e5)];
+float BULLET_POS_Y[int(1e5)];
+double ENERGY_TIMER =0;
+int BULLET_COUNT=0;
+int BULLETS_GAP = 0;
+int MAKE_TANK_BULLETS = 0;
+int ENERGY_TIMER_LOCK = 0;
+int DISPLAY_BULLETS[int(1e5)];
+int showtankshield=0;
 //****************************//
-//****** BALL VARIABLES ******//
+//********* BALL *************//
 //****************************//
 
 float VELOCITY = .5f;
@@ -52,46 +61,68 @@ float BALL_POS_Y = 0.0f;
 float DECELERATION = 0.1f;
 float BALL_VEL_X = 0.0f;
 float BALL_VEL_Y = 0.0f;
+int SHOW_BALL = 1;
 
 //****************************//
-//***** BOOLEAN VARIABLES ****//
+//******* ENEMY TURRET *******//
 //****************************//
-int SHOW_ENEMY_TURRET =1;
-int SHOW_BALL = 1;
-int SHOW_CHAINS = 1;
+
+float ENEMY_TURRET_POS_X =9.2f;
+float ENEMY_TURRET_POS_Y =-9.0f;
 float ENEMY_WALL_1_ANGLE = 10.0f;
-int count = 0;
-int count2 = 0;
-int LOCK = 0;
-int LOCK2 =0;
-float transturretx=9.2f;
-float transturrety =-9.0f;
-double timer =0;
-int timerlock = 0;
+int CHAINS_HIT_COUNT = 0;
+int ENEMY_TURRET_HIT_COUNT = 0;
+int SHOW_ENEMY_TURRET =1;
+int SHOW_CHAINS = 1;
+int CHAINS_HIT_LOCK = 0;
+int ENEMY_TURRET_HIT_LOCK =0;
+double CURSOR_X,CURSOR_Y;
+int limit=0;
+float enemybulletspos[10000];
+int bulletcount=0;
+int target_1;
+
+//****************************//
+//********** PLANE ***********//
+//****************************//
+
 float TRANSLATE_PLANE_BY = -.1;
 float PLANE_POS_X = -12;
 float PLANE_POS_Y = 0.0f;
-double x,y;
-float gunangle;
-int limit=0;
-int maketankbullets=0;
-int planecrashcount=0;
-int tempballgap=0;
-int displaybullets[int(1e5)];
+int PLANE_HIT_COUNT = 0;
+
+//////////blocks///////
+
+float transplatx = 7.5f;//-0.25f;
+float transplaty = -4.0f;
+  
+float platformx = 7.5f-0.25f;
+float platformy = -4.0f+0.15f;
+int moved=0;
+float blockfallangle=0;
+float blackblockx = 5.8f;
+float blackblocky= -3.2f;
+float greyblockx = 6.0f;
+float greyblocky = -2.2f;
+float whiteblockx =5.8f;
+float whiteblocky = -1.2f;
 
 
-float bulletangles[int(1e5)];
-float bulletposx[int(1e5)];
-float bulletposy[int(1e5)];
+int message=1;
+int side=0;
+float blockfallangle2=0;
+int message2=1;
+int side2=0;
+int moved2=0;
+int hitback=0;
 
 VAO *GROUND,*SKY,*WHEELS[20],*TANK_BODY_UPPER,*TANK_BODY_LOWER,*TANK_TURRET_BASE,*TANK_SPROCKET_LEFT;
 VAO *TANK_SPROCKET_RIGHT,*TANK_TRACK,*TANK_TURRET,*TANK_TURRET_END,*BALL,*ENEMY_WALL_1,*CHAINS[20];
 VAO *ENEMY_TURRET_BASE,*ENEMY_TURRET_RING,*ENEMY_TURRET_BODY,*ENEMY_TURRET_GUN,*ENEMY_PLATFORM,*ENEMY_PLATFORM_WALL;
-VAO *DUMMYBOX,*smokelower,*smokeupper,*tankgun,*tankgunbase,*tankgunring,*tankgunhandle;
-
-VAO *planenose,*planebody1,*planebody2,*planebody3,*planetail,*planewing,*planejet,*planecockpit,*tankbullets[100000];
-VAO *tankgunend,*tankgunend2;
-
+VAO *DUMMYBOX,*SMOKE_LOWER,*SMOKE_UPPER,*TANK_GUN,*TANK_GUN_BASE,*TANK_GUN_HANDLE;
+VAO *PLANE_NOSE,*PLANE_BODY_1,*PLANE_BODY_2,*PLANE_BODY_3,*PLANE_TAIL,*PLANE_WING,*PLANE_COCKPIT,*TANK_BULLETS[100000];
+VAO *TANK_GUN_BARREL,*TANK_GUN_TRIGGER,*enemybullets[100000],*tankshield,*ENEMY_PLATFORM_WALL2,*ENEMY_PLATFORM2,*ENEMY_PLATFORM3;
+VAO * ENEMY_PLATFORM_WALL3;
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path) {
 
 	GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
@@ -113,6 +144,7 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
 			FragmentShaderCode += "\n" + Line;
 		FragmentShaderStream.close();
 	}
+	
 	GLint Result = GL_FALSE;
 	int InfoLogLength;
 	printf("Compiling shader : %s\n", vertex_file_path);
@@ -241,15 +273,14 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 			    TRANSLATE_TANK_BY = 0.0f; 
 			    break;
 		    case GLFW_KEY_SPACE:
-			    timerlock=0;
+			    ENERGY_TIMER_LOCK=0;
 			    BALL_POS_Y = 0.0f;
 			    BALL_POS_X = TANK_POS_X;
-			    BALL_VEL_X = VELOCITY *timer/40.0 * cos( TURRET_ANGLE * M_PI/180.0);
-			    BALL_VEL_Y = VELOCITY *timer/40.0* sin( TURRET_ANGLE * M_PI/180.0);
+			    BALL_VEL_X = VELOCITY *ENERGY_TIMER/40.0 * cos( TURRET_ANGLE * M_PI/180.0);
+			    BALL_VEL_Y = VELOCITY *ENERGY_TIMER/40.0* sin( TURRET_ANGLE * M_PI/180.0);
 		            DECELERATION = BALL_VEL_Y/20.0;
 			    SHOW_BALL = 1;
-			    LOCK2=LOCK=1;
-			    cout<<"Timer value "<<timer<<endl;
+			    ENEMY_TURRET_HIT_LOCK=CHAINS_HIT_LOCK=1;
 		    default:
 			    break;
         }
@@ -270,8 +301,9 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 			    TRANSLATE_TANK_BY = 0.05f;
 			    break;
 		    case GLFW_KEY_SPACE:
-			    timer=0;
-			    timerlock=1;
+			    ENERGY_TIMER=0;
+			    ENERGY_TIMER_LOCK=1;
+			    hitback=0;
 		    default:
 			    break;
 	    }
@@ -296,17 +328,23 @@ void mouseButton (GLFWwindow* window, int button, int action, int mods)
         case GLFW_MOUSE_BUTTON_LEFT:
 		if(action == GLFW_PRESS)
 		{
-			maketankbullets=1;
+			MAKE_TANK_BULLETS=1;
 		}
 		else if (action == GLFW_RELEASE)
 		{
-			maketankbullets=0;
+			MAKE_TANK_BULLETS=0;
 		}
 		break;
         case GLFW_MOUSE_BUTTON_RIGHT:
-            if (action == GLFW_RELEASE) {
-                rectangle_rot_dir *= -1;
+            if (action == GLFW_RELEASE) 
+	    {
+		    showtankshield=0;
             }
+	    if(action==GLFW_PRESS)
+	    {
+		    showtankshield=1;
+
+	    }
             break;
         default:
             break;
@@ -321,6 +359,46 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
     glViewport (0, 0, (GLsizei) fbwidth, (GLsizei) fbheight);
     Matrices.projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 500.0f);
 }
+
+
+
+bool intersects(float platform_x,float platform_y,float rectwidth,float rectheight,float circler)
+{
+    float circleDistancex = abs(BALL_POS_X-6.7f - platform_x);//(circle.x - rect.x);
+    float circleDistancey = abs(BALL_POS_Y-7.0f - platform_y);
+
+    if (circleDistancex > (rectwidth/2.0f + circler)) { return false; }
+    if (circleDistancey > (rectheight/2.0f + circler)) { return false; }
+
+    if (circleDistancex <= (rectwidth/2.0f)) { return true; } 
+    if (circleDistancey <= (rectheight/2.0f)) { return true; }
+
+    float cornerDistance_sq = pow((circleDistancex - rectwidth/2.0f),2) +
+                         pow((circleDistancey - rectheight/2.0f),2);
+
+    return (cornerDistance_sq <= (pow(circler,2)));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 VAO * createCircle( GLfloat x, GLfloat y, GLfloat z, GLfloat radius, GLint numberOfSides )
 {
@@ -396,7 +474,31 @@ void draw ()
   Matrices.view = glm::lookAt(glm::vec3(0,0,3), glm::vec3(0,0,0), glm::vec3(0,1,0));
   glm::mat4 VP = Matrices.projection * Matrices.view;
   glm::mat4 MVP;	
-  
+
+
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 translatesky = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f)); 
+  Matrices.model*=translatesky;
+  MVP = VP * Matrices.model;
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(SKY);
+
+
+
+
+  if(showtankshield)
+  {
+	  Matrices.model = glm::mat4(1.0f);
+	  glm::mat4 ptankshield = glm::translate (glm::vec3(-7.5f+TANK_POS_X,-9.0f, 0.0f)); 
+	  Matrices.model*= ptankshield;
+	  MVP = VP * Matrices.model;
+	  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+	  draw3DObject(tankshield);
+  }
+
+
+
+
   Matrices.model = glm::mat4(1.0f);
   glm::mat4 translateRectangle = glm::translate (glm::vec3(0.0f, -1.0f, 0.0f)); 
   Matrices.model*=translateRectangle;
@@ -404,12 +506,6 @@ void draw ()
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
   draw3DObject(GROUND);
 	  
-  Matrices.model = glm::mat4(1.0f);
-  glm::mat4 translatesky = glm::translate (glm::vec3(0.0f, 0.0f, 0.0f)); 
-  Matrices.model*=translatesky;
-  MVP = VP * Matrices.model;
-  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(SKY);
 
   Matrices.model = glm::mat4(1.0f);
   glm::mat4 translatetankoutline1 = glm::translate (glm::vec3(TANK_POS_X, -1.0f, 0.0f)); 
@@ -493,7 +589,7 @@ void draw ()
   Matrices.model*=tankgunbase1;
   MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(tankgunbase);
+  draw3DObject(TANK_GUN_BASE);
 
   TANK_POS_X += TRANSLATE_TANK_BY;
 
@@ -516,34 +612,44 @@ void draw ()
   }
   if(BALL_POS_Y<=-2.0)
   {
-	  // SHOW_BALL = 0;
 	  BALL_VEL_Y*=-0.6;
-	  //DECELERATION = BALL_VEL_Y/20.0;
 	  BALL_VEL_X-=0.005;
-	  //BALL_POS_X = TANK_POS_X;
-	  //BALL_POS_Y=0.0f;
   }
-  if(BALL_VEL_X<=0)
+  if(BALL_VEL_X<=0 && !hitback)
   {
+	 // cout<<"not hitback executed"<<endl;
 	  BALL_VEL_X=0.0f;
 	  BALL_VEL_Y=0.0f;
 	  DECELERATION=0.0f;
-	//  SHOW_BALL=0;
+	  SHOW_BALL=0;
   }
-  if(LOCK && BALL_POS_X-6.9f >=9.0f && BALL_POS_X -6.9f <= 10.0f && BALL_POS_Y <= 0.2f && BALL_POS_Y >=-2)//-6.7)
+  if(hitback)
   {
-	  count++;
-	  LOCK=0;
+	  BALL_VEL_X+=0.005;
+	  if(BALL_VEL_X>=0)
+	  {
+	//	  cout<<"hitback"<<BALL_VEL_X<<endl;
+		  BALL_VEL_X=0.0f;
+		  BALL_VEL_Y=0.0f;
+		  DECELERATION=0.0f;
+		  SHOW_BALL=0;
+	  }
   }
-  if(!SHOW_CHAINS && LOCK2 && BALL_POS_X -6.9 >= 8.4f && BALL_POS_X-6.9 <=10.0f && BALL_POS_Y <= -1.1f && BALL_POS_Y >= -9.0f)
+  
+  if(CHAINS_HIT_LOCK && BALL_POS_X-6.9f >=9.0f && BALL_POS_X -6.9f <= 10.0f && BALL_POS_Y <= 0.2f && BALL_POS_Y >=-2)//-6.7)
   {
-	  count2++;
-	  LOCK2=0;
+	  CHAINS_HIT_COUNT++;
+	  CHAINS_HIT_LOCK=0;
   }
-  if(count2>=4)
+  if(!SHOW_CHAINS && ENEMY_TURRET_HIT_LOCK && BALL_POS_X -6.9 >= 8.4f && BALL_POS_X-6.9 <=10.0f && BALL_POS_Y <= -1.1f && BALL_POS_Y >= -9.0f)
+  {
+	  ENEMY_TURRET_HIT_COUNT++;
+	  ENEMY_TURRET_HIT_LOCK=0;
+  }
+  if(ENEMY_TURRET_HIT_COUNT>=4)
 	  SHOW_ENEMY_TURRET = 0;
 
-  if(count>=3)
+  if(CHAINS_HIT_COUNT>=3)
 	  SHOW_CHAINS=0;
 
   if(!SHOW_CHAINS)
@@ -577,36 +683,34 @@ void draw ()
   if(SHOW_ENEMY_TURRET)
   {
 	  Matrices.model = glm::mat4(1.0f);
-	  glm::mat4 t4 = glm::translate (glm::vec3(transturretx, transturrety, 0.0f)); 
+	  glm::mat4 t4 = glm::translate (glm::vec3(ENEMY_TURRET_POS_X, ENEMY_TURRET_POS_Y, 0.0f)); 
 	  Matrices.model*=t4;
 	  MVP = VP * Matrices.model;
 	  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
 	  draw3DObject(ENEMY_TURRET_GUN);
 	  
 	  Matrices.model = glm::mat4(1.0f);
-  	  glm::mat4 t1 = glm::translate (glm::vec3(transturretx, transturrety, 0.0f));
+  	  glm::mat4 t1 = glm::translate (glm::vec3(ENEMY_TURRET_POS_X, ENEMY_TURRET_POS_Y, 0.0f));
 	  Matrices.model*=t1;
 	  MVP = VP * Matrices.model;
 	  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
 	  draw3DObject(ENEMY_TURRET_BASE);
 	  
 	  Matrices.model = glm::mat4(1.0f);
-	  glm::mat4 t2 = glm::translate (glm::vec3(transturretx, transturrety,0.0f)); 
+	  glm::mat4 t2 = glm::translate (glm::vec3(ENEMY_TURRET_POS_X, ENEMY_TURRET_POS_Y,0.0f)); 
 	  Matrices.model*=t2;
 	  MVP = VP * Matrices.model;
 	  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
 	  draw3DObject(ENEMY_TURRET_RING);
 	  
 	  Matrices.model = glm::mat4(1.0f);
-	  glm::mat4 t3 = glm::translate (glm::vec3(transturretx, transturrety, 0.0f)); 
+	  glm::mat4 t3 = glm::translate (glm::vec3(ENEMY_TURRET_POS_X, ENEMY_TURRET_POS_Y, 0.0f)); 
 	  Matrices.model*=t3;
 	  MVP = VP * Matrices.model;
 	  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
 	  draw3DObject(ENEMY_TURRET_BODY);
   }
-
-  float transplatx = 8.5f;
-  float transplaty = -4.0f;
+  
   Matrices.model = glm::mat4(1.0f);
   glm::mat4 tplat1 = glm::translate (glm::vec3(transplatx, transplaty, 0.0f)); 
   Matrices.model*=tplat1;
@@ -615,22 +719,181 @@ void draw ()
   draw3DObject(ENEMY_PLATFORM);
 
   Matrices.model = glm::mat4(1.0f);
-  glm::mat4 tplat2 = glm::translate (glm::vec3(transplatx, transplaty, 0.0f)); 
+  glm::mat4 tplat01 = glm::translate (glm::vec3(transplatx, transplaty, 0.0f)); 
+  Matrices.model*=tplat01;
+  MVP = VP * Matrices.model;
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(ENEMY_PLATFORM2);
+  
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 tplat02 = glm::translate (glm::vec3(transplatx, transplaty, 0.0f)); 
+  Matrices.model*=tplat02;
+  MVP = VP * Matrices.model;
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(ENEMY_PLATFORM3);
+
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 tplat2 = glm::translate (glm::vec3(blackblockx,blackblocky,0.0f)); 
   Matrices.model*=tplat2;
   MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
   draw3DObject(ENEMY_PLATFORM_WALL);
+/////////////////////////////////////////////////////////////////////////////////////////////// 
+
+ if(intersects(platformx,platformy,5.5f,0.8f,0.2f))
+  {
+	  BALL_VEL_Y*=-1.0;
+	  BALL_VEL_X-=0.005;
+  }
+
+  if(intersects(greyblockx,greyblocky,1.0f,1.0f,0.2f))
+  {
+	  hitback=1;
+	  greyblockx+=0.20f;
+  }
+  
+  if(intersects(blackblockx,blackblocky,1.0f,1.0f,0.2f))
+  {
+	  hitback=1;
+	  blackblockx+=0.20f;
+  }
+  if(intersects(whiteblockx,whiteblocky,1.0f,1.0f,0.2f))
+  {
+
+	  hitback=1;
+	  whiteblockx+=0.20f;
+  }
+  if(hitback && BALL_VEL_X>0)
+	  BALL_VEL_X*=-1.0;
+
+  
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  
+  if(fabs(blackblockx-greyblockx)>0.5f /* && message*/ && fabs(blackblocky-greyblocky)<=1.1f && fabs(blackblocky-greyblocky)>0.9f)
+  {
+	  moved=1;
+	  if(blackblockx<greyblockx)
+		  side=1;
+	  else
+		  side=-1;
+  }
+  if(fabs(whiteblockx-greyblockx)>0.5f /* && message2 */&& fabs(whiteblocky-greyblocky)<=1.1f && fabs(whiteblocky-greyblocky)>=0.9f)
+  {
+	  moved2=1;
+	  if(whiteblockx>greyblockx)
+		  side2=1;
+	  else
+		  side2=-1;
+  }
+  if(fabs(whiteblockx-blackblockx)>0.5 /*&& message2*/ && fabs(whiteblocky-blackblocky)<=1.1f && fabs(whiteblocky-blackblocky)>=0.9f)
+
+  {
+	  moved2=1;
+	  if(whiteblockx>blackblockx)
+		  side2=1;
+	  else
+		  side2=-1;
+
+  }
+ 
+ // if(fabs(whiteblockx-blackblockx)<0.6 && abs(blackblocky-whiteblocky)<=1)
+ // {
+//	  moved2=0;
+	 // message2=0;
+//	  whiteblocky=blackblocky+1.0f;/////////////////////////////////////////////////////////////////
+ // }
+
+  if(fabs(whiteblocky-greyblocky)>1.1)
+  {
+	  side2=0;
+	  moved2=1;
+  }
 
 
-  if(timerlock)
-	timer+=4;
+  if(fabs(whiteblockx-blackblockx)<1.1 && fabs(whiteblocky-blackblocky)<0.1)
+  {
+	  if(whiteblockx<blackblockx)
+		  blackblockx=whiteblockx+1.0f;
+	  else
+		  whiteblockx=blackblockx+1.0f;////////////////////////////////////////
+  }
+   if(fabs(whiteblockx-greyblockx)<1.1 && fabs(whiteblocky-greyblocky)<0.1)
+  {
+	  if(whiteblockx<greyblockx)
+		  greyblockx=whiteblockx+1.0f;////////////////////////////////////////
+	  else
+		  whiteblockx=greyblockx+1.0f;
+  }
+  if(fabs(blackblockx-greyblockx)<1.1 && fabs(blackblocky-greyblocky)<0.1)
+  {
+	  if(greyblockx<blackblockx)
+		  blackblockx=greyblockx+1.0f;///////////////////////////////////////
+	  else
+		  greyblockx=blackblockx+1.0f;
+  }
+ 
+
+
+  ////savers//////////////////
+  if(whiteblocky-0.7f<=platformy)
+  {
+	  moved2=0;
+	  //message2=0;
+	  whiteblocky=blackblocky;
+  }
+
+ if(greyblocky-0.7f<=platformy)
+  {
+	  moved=0;
+	 // message=0;
+	  greyblocky=blackblocky;
+  }
+
+
+
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 twhitewall = glm::translate (glm::vec3(whiteblockx,whiteblocky,0.0f)); 
+  if(moved2)
+  {
+	  whiteblocky-=0.1;
+	  blockfallangle2-=1;
+	  whiteblockx=whiteblockx +side2*.05;
+	  glm::mat4 rplatform3 = glm::rotate((float)(blockfallangle2*M_PI/180.0f), glm::vec3(0,0,1));
+	  Matrices.model*=twhitewall*rplatform3;
+  }
+  else 
+	  Matrices.model*=twhitewall;
+  MVP = VP * Matrices.model;
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(ENEMY_PLATFORM_WALL3);
+
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 tplat3 = glm::translate (glm::vec3(greyblockx,greyblocky,0.0f)); 
+  if(moved)
+  {
+	  greyblocky-=0.1;
+	  blockfallangle-=2;
+	  greyblockx=greyblockx +side*0.05;
+	  glm::mat4 rplatform2 = glm::rotate((float)(blockfallangle*M_PI/180.0f), glm::vec3(0,0,1));
+	  Matrices.model*=tplat3*rplatform2;
+  }
+  else
+	  Matrices.model*=tplat3;
+  MVP = VP * Matrices.model;
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+  draw3DObject(ENEMY_PLATFORM_WALL2);
+
+
+
+  if(ENERGY_TIMER_LOCK)
+	ENERGY_TIMER+=4;
 
   PLANE_POS_X+=TRANSLATE_PLANE_BY;
   if(PLANE_POS_X<=-20)
   {
 	  PLANE_POS_X=12;
 	  PLANE_POS_Y=float((rand()%15)-5);
-	  planecrashcount=0;
+	  PLANE_HIT_COUNT=0;
   }
 
   Matrices.model = glm::mat4(1.0f);
@@ -638,170 +901,183 @@ void draw ()
   Matrices.model*=pcockpit;
   MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(planecockpit);
+  draw3DObject(PLANE_COCKPIT);
 
   Matrices.model = glm::mat4(1.0f);
   glm::mat4 pnose = glm::translate (glm::vec3(PLANE_POS_X, PLANE_POS_Y, 0.0f)); 
   Matrices.model*=pnose;
   MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(planenose);
+  draw3DObject(PLANE_NOSE);
 
   Matrices.model = glm::mat4(1.0f);
   glm::mat4 pbody1 = glm::translate (glm::vec3(PLANE_POS_X, PLANE_POS_Y, 0.0f)); 
   Matrices.model*=pbody1;
   MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(planebody1);
+  draw3DObject(PLANE_BODY_1);
 
   Matrices.model = glm::mat4(1.0f);
   glm::mat4 pbody2 = glm::translate (glm::vec3(PLANE_POS_X, PLANE_POS_Y, 0.0f)); 
   Matrices.model*=pbody2;
   MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(planebody2);
+  draw3DObject(PLANE_BODY_2);
 
   Matrices.model = glm::mat4(1.0f);
   glm::mat4 pbody3 = glm::translate (glm::vec3(PLANE_POS_X, PLANE_POS_Y, 0.0f)); 
   Matrices.model*=pbody3;
   MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(planebody3);
+  draw3DObject(PLANE_BODY_3);
 
   Matrices.model = glm::mat4(1.0f);
   glm::mat4 ptail = glm::translate (glm::vec3(PLANE_POS_X, PLANE_POS_Y, 0.0f)); 
   Matrices.model*= ptail;
   MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(planetail);
+  draw3DObject(PLANE_TAIL);
 
   Matrices.model = glm::mat4(1.0f);
   glm::mat4 pwing = glm::translate (glm::vec3(PLANE_POS_X, PLANE_POS_Y, 0.0f)); 
   Matrices.model*= pwing;
   MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(planewing);
+  draw3DObject(PLANE_WING);
 
   if(BALL_POS_X-6.9>=PLANE_POS_X-0.5 && BALL_POS_X-6.9<=PLANE_POS_X+1.5 && BALL_POS_Y-7.9f <= PLANE_POS_Y +1.0 && BALL_POS_Y- 7.9f >=PLANE_POS_Y-1.0)
   {
 	  PLANE_POS_Y=float((rand()%15)-5);
 	  PLANE_POS_X=12;
-	  planecrashcount=0;
+	  PLANE_HIT_COUNT=0;
   }
   
- /* Matrices.model = glm::mat4(1.0f);
-  glm::mat4 dummy1 = glm::translate (glm::vec3(PLANE_POS_X + 1.5f, PLANE_POS_Y -0.3, 0.0f)); 
-  Matrices.model*= dummy1;  // -0.5; +1.5 
-  MVP = VP * Matrices.model; //+0.5 -0.3 
-  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(DUMMYBOX);
-*/
+ // Matrices.model = glm::mat4(1.0f);                                   
+ // glm::mat4 dummy1 = glm::translate (glm::vec3(BALL_POS_X-6.7f, BALL_POS_Y-7.0f, 0.0f)); 
+ // Matrices.model*= dummy1;  // -0.5; +1.5 
+ // MVP = VP * Matrices.model; //+0.5 -0.3 
+ // glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+ // draw3DObject(DUMMYBOX);
 
-  Matrices.model = glm::mat4(1.0f);
+//(BALL_POS_X-7.3f, BALL_POS_Y-7.3f-1.0f, 0.0f)  Matrices.model = glm::mat4(1.0f);
+  
+
+  Matrices.model = glm::mat4(1.0f);                                   
   glm::mat4 psmoke1 = glm::translate (glm::vec3(PLANE_POS_X, PLANE_POS_Y, 0.0f)); 
   Matrices.model*= psmoke1;
   MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(smokeupper);
+  draw3DObject(SMOKE_UPPER);
 
   Matrices.model = glm::mat4(1.0f);
   glm::mat4 psmoke2 = glm::translate (glm::vec3(PLANE_POS_X, PLANE_POS_Y, 0.0f)); 
   Matrices.model*= psmoke2;
   MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(smokelower);
+  draw3DObject(SMOKE_LOWER);
 
-
-  if(maketankbullets)
+  if(MAKE_TANK_BULLETS)
   {
-	  tempballgap++;
-	  if(tempballgap>=5)
+	  BULLETS_GAP++;
+	  if(BULLETS_GAP>=5)
 	  {
-		  bulletangles[limit]=gunangle;
-		  bulletposx[limit]=TANK_POS_X-9.6f+1.5f*cos(gunangle);
-		  bulletposy[limit]=-7.7f+1.5f*sin(gunangle);
-		  limit++;
-		  tempballgap=0;
+		  BULLET_ANGLES[BULLET_COUNT]=GUN_ANGLE;
+		  BULLET_POS_X[BULLET_COUNT]=TANK_POS_X-9.6f+1.5f*cos(GUN_ANGLE);
+		  BULLET_POS_Y[BULLET_COUNT]=-7.7f+1.5f*sin(GUN_ANGLE);
+		  BULLET_COUNT++;
+		  BULLETS_GAP=0;
 	  }
   }
 
-  for(int i=0;i<limit;i++)
+  for(int i=0;i<BULLET_COUNT;i++)
   {
 	  Matrices.model = glm::mat4(1.0f);
 	  
-	  if(!displaybullets[i])
+	  if(!DISPLAY_BULLETS[i])
 	  {
-		  bulletposx[i]+=.2f*cos(bulletangles[i]);
-		  bulletposy[i]+=.2f*sin(bulletangles[i]);
-		  if(bulletposx[i]+1.5>=PLANE_POS_X-0.5f && bulletposx[i]+1.5<=PLANE_POS_X+1.5f && bulletposy[i]<=PLANE_POS_Y+0.5 && bulletposy[i]>=PLANE_POS_Y-0.5f)
+		  BULLET_POS_X[i]+=.2f*cos(BULLET_ANGLES[i]);
+		  BULLET_POS_Y[i]+=.2f*sin(BULLET_ANGLES[i]);
+		  if(BULLET_POS_X[i]+1.5>=PLANE_POS_X-0.5f && BULLET_POS_X[i]+1.5<=PLANE_POS_X+1.5f && BULLET_POS_Y[i]<=PLANE_POS_Y+0.5 && BULLET_POS_Y[i]>=PLANE_POS_Y-0.5f)
 		  {
-			  cout<<"YEAH!!"<<endl;
-			  planecrashcount++;
-			  displaybullets[i]=1;
+			  PLANE_HIT_COUNT++;
+			  DISPLAY_BULLETS[i]=1;
 		  }
-		  if(planecrashcount>=7)
+		  if(PLANE_HIT_COUNT>=7)
 		  {
 			  PLANE_POS_Y=float((rand()%15)-5);
 			  PLANE_POS_X=12;
-			  planecrashcount=0;
+			  PLANE_HIT_COUNT=0;
 		  }
 
-		  glm::mat4 tankbull1 = glm::translate (glm::vec3(bulletposx[i], bulletposy[i], 0.0f));
+		  glm::mat4 tankbull1 = glm::translate (glm::vec3(BULLET_POS_X[i], BULLET_POS_Y[i], 0.0f));
 		  Matrices.model*=tankbull1;
 		  MVP = VP * Matrices.model;
 		  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-		  draw3DObject(tankbullets[i]);
+		  draw3DObject(TANK_BULLETS[i]);
 	  }
   }
 
-
-
-
-  float len_x = x+10.0f-TANK_POS_X-1.0f;
-  float len_y = 6+y;
-  gunangle = atan2(len_y,len_x);
+  float len_x = CURSOR_X+10.0f-TANK_POS_X-1.0f;
+  float len_y = 6+CURSOR_Y;
+  GUN_ANGLE = atan2(len_y,len_x);
   
   Matrices.model = glm::mat4(1.0f);
   glm::mat4 ptankgun = glm::translate (glm::vec3(TANK_POS_X-8.2f, -7.7f, 0.0f)); 
-  glm::mat4 rtankgun = glm::rotate((float)(gunangle), glm::vec3(0,0,1));
+  glm::mat4 rtankgun = glm::rotate((float)(GUN_ANGLE), glm::vec3(0,0,1));
   Matrices.model*= ptankgun*rtankgun;
   MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(tankgun);
-
-
+  draw3DObject(TANK_GUN);
 
   Matrices.model = glm::mat4(1.0f);
   glm::mat4 ptankgunhandle = glm::translate (glm::vec3(TANK_POS_X-8.2f, -7.7f, 0.0f)); 
-  glm::mat4 rtankgunhandle = glm::rotate((float)(gunangle), glm::vec3(0,0,1));
+  glm::mat4 rtankgunhandle = glm::rotate((float)(GUN_ANGLE), glm::vec3(0,0,1));
   Matrices.model*= ptankgunhandle*rtankgunhandle;
   MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(tankgunhandle);
+  draw3DObject(TANK_GUN_HANDLE);
 
   Matrices.model = glm::mat4(1.0f);
   glm::mat4 ptankgunend = glm::translate (glm::vec3(TANK_POS_X-8.2f, -7.7f, 0.0f)); 
-  glm::mat4 rtankgunend = glm::rotate((float)(gunangle), glm::vec3(0,0,1));
+  glm::mat4 rtankgunend = glm::rotate((float)(GUN_ANGLE), glm::vec3(0,0,1));
   Matrices.model*= ptankgunend*rtankgunend;
   MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(tankgunend);
-
+  draw3DObject(TANK_GUN_BARREL);
 
   Matrices.model = glm::mat4(1.0f);
   glm::mat4 ptankgunend2 = glm::translate (glm::vec3(TANK_POS_X-8.2f, -7.7f, 0.0f)); 
-  glm::mat4 rtankgunend2 = glm::rotate((float)(gunangle), glm::vec3(0,0,1));
+  glm::mat4 rtankgunend2 = glm::rotate((float)(GUN_ANGLE), glm::vec3(0,0,1));
   Matrices.model*= ptankgunend2*rtankgunend2;
   MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-  draw3DObject(tankgunend2);
+  draw3DObject(TANK_GUN_TRIGGER);
 
 
-
-
-
-
-
+  if(!SHOW_CHAINS && SHOW_ENEMY_TURRET)
+  {
+	  if(!limit)
+		  target_1=rand()%200+1;
+	  limit++;
+	  if(limit==target_1)
+	  {
+		  bulletcount++;
+		  limit=0;
+	  }
+	  
+	  for(int i=0;i<bulletcount;i++)
+	  {
+		  enemybulletspos[i]-=0.5;
+		  if(enemybulletspos[i]+6.0f-showtankshield*1.25f<=-(10-(1+TANK_POS_X)))
+			  continue;
+		  Matrices.model = glm::mat4(1.0f);
+		  glm::mat4 penemybullets = glm::translate (glm::vec3(8.0f+enemybulletspos[i],-8.3f, 0.0f)); 
+		  Matrices.model*= penemybullets;
+		  MVP = VP * Matrices.model;
+		  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+		  draw3DObject(enemybullets[i]);
+	  }
+  }
 
 
 }
@@ -856,16 +1132,16 @@ void initGL (GLFWwindow* window, int width, int height)
 	TANK_TURRET = createRectangle(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,  0.0f,-0.2f, 1.0f,-0.1f, 0.0f,0.2f, 1.0f,0.1f);
 	TANK_TURRET_END =createRectangle(0.15f,0.15f,0.15f,0.15f,0.15f,0.15f, 0.8f,-0.2f, 1.0f,-0.2f, 0.8f,0.2f, 1.0f,0.2f);
 
-	tankgunbase = createRectangle(0.15f,0.15f,0.15f,0.15f,0.15f,0.15f, 0.0f,0.0f, 0.4f,0.0f, 0.1f,0.6f, 0.3f,0.6f);
+	TANK_GUN_BASE = createRectangle(0.15f,0.15f,0.15f,0.15f,0.15f,0.15f, 0.0f,0.0f, 0.4f,0.0f, 0.1f,0.6f, 0.3f,0.6f);
 
-	tankgunring  = createRectangle(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f, 0.0f,0.0f, 1.0f,0.0f, 0.0f,0.2f, 1.0f,0.2f);
+	//tankgunring  = createRectangle(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f, 0.0f,0.0f, 1.0f,0.0f, 0.0f,0.2f, 1.0f,0.2f);
 	
 	
 	
-	tankgunhandle = createRectangle(0.2f,0.2f,0.2f,0.2f,0.2f,0.2f, -0.25f,-0.15f, 0.25f,-0.15f, -0.25f,0.15f, 0.25f,0.15f);
-	tankgun = createRectangle(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f, 0.0f,-0.1f, 1.3f,-0.05f, 0.0f,0.1f, 1.3f,0.05f); 
-	tankgunend = createRectangle(0.3f,0.3f,0.3f,0.3f,0.3f,0.3f, 1.2f,-0.1f, 1.4f,-0.1f, 1.2f,0.1f, 1.4f,0.1f); 
-	tankgunend2 = createRectangle(0.1f,0.1f,0.1f,0.1f,0.1f,0.1f, -0.25f,-0.3f, -0.2f,-0.3f, -0.25f,0.3f, -0.2f,0.3f); 
+	TANK_GUN_HANDLE = createRectangle(0.2f,0.2f,0.2f,0.2f,0.2f,0.2f, -0.25f,-0.15f, 0.25f,-0.15f, -0.25f,0.15f, 0.25f,0.15f);
+	TANK_GUN = createRectangle(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f, 0.0f,-0.1f, 1.3f,-0.05f, 0.0f,0.1f, 1.3f,0.05f); 
+	TANK_GUN_BARREL = createRectangle(0.3f,0.3f,0.3f,0.3f,0.3f,0.3f, 1.2f,-0.1f, 1.4f,-0.1f, 1.2f,0.1f, 1.4f,0.1f); 
+	TANK_GUN_TRIGGER = createRectangle(0.1f,0.1f,0.1f,0.1f,0.1f,0.1f, -0.25f,-0.3f, -0.2f,-0.3f, -0.25f,0.3f, -0.2f,0.3f); 
 
 	BALL = createCircle(1.5f,0.0f,0.0f,.2f,108);
 	ENEMY_WALL_1 = createRectangle(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,  -0.1f,0.0f, 0.1f,0.0f, -0.1f,2.0f, 0.1f,2.0f);
@@ -883,28 +1159,42 @@ void initGL (GLFWwindow* window, int width, int height)
 	ENEMY_TURRET_BODY = createRectangle(0.317f,0.317f,0.317f,0.317f,0.317f,0.317f, -0.4f,0.6f, 0.4f,0.6f, -0.2f,1.0, 0.35f,1.0f);
 	ENEMY_TURRET_GUN = createRectangle(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f, -0.9f,0.75f, -0.2f,0.7f, -0.9f,.85f, -0.2f,.9f);
 
-
-	ENEMY_PLATFORM = createRectangle(0.317f,0.317f,0.317f,0.317f,0.317f,0.317f, -1.5f,0.0f,  1.5f,0.0f,  -1.5f,0.3f,  1.5f,0.3f);
-	ENEMY_PLATFORM_WALL = createRectangle(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f, -1.0f,0.3f,  -0.6f,0.3f,  -1.0f,1.5f,  -0.6f,1.5f);
-
-	DUMMYBOX = createRectangle(1.0f,1.0f,1.0f,1.0f,1.0f,1.0f, -.1f,-0.1f,  0.1f,-0.1f,  -.1f,0.1f,  .1f,0.1f);
-	planenose = createTriangle(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f, -.5f,0.0f , 0.0f,0.15f, 0.0f,-0.15);
-
-	planebody1 = createRectangle(0.4f,0.4f,0.4f,0.4f,0.4f,0.4f,  0.0f,-0.15f, 0.4f,-0.2f, 0.0f,0.15f, 0.4f,0.2f);
-	planebody2 = createRectangle(0.5f,0.5f,0.5f,0.5f,0.5f,0.5f, 0.4f,-0.18f, 1.0f,-0.18f, 0.4f,0.18f, 1.0f,0.18f);
-	planebody3 = createRectangle(0.2f,0.2f,0.2f,0.2f,0.2f,0.2f,  1.0f,-0.2f, 1.4f,-0.15f, 1.0f,.2f, 1.4f,0.1f);
-	planecockpit = createCircle(0.2f,0.06f ,0.0f, 0.25f,108);
+	ENEMY_PLATFORM = createRectangle(0.317f,0.317f,0.317f,0.317f,0.317f,0.317f, -4.0f,0.0f,  0.0f,0.0f,  -4.4f,0.3f,  0.0f,0.3f);
 	
-	planetail  = createRectangle(0.0,0.0,0.0,0.0,0.0,0.0, 1.0f,0.2f, 1.4f,0.1f , 1.3f,0.6f, 1.5f,0.6f);
+	ENEMY_PLATFORM2 = createRectangle(0.317f,0.317f,0.317f,0.317f,0.317f,0.317f, 1.5f,0.0f,  2.5f,0.0f,  1.5f,0.3f,  2.5f,0.3f);
+	ENEMY_PLATFORM3 = createRectangle(0.517f,0.517f,0.517f,0.517f,0.517f,0.517f, 0.0f,0.0f,  1.5f,0.0f,  0.0f,0.3f,  1.5f,0.3f);
+	ENEMY_PLATFORM_WALL = createRectangle(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f, -0.5f,-0.5f,  0.5f,-0.5f,  -0.5f,0.5f,  0.5f,0.5f);
 
-	planejet = createRectangle(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,  -0.1f,0.0f, 0.1f,0.0f, -0.1f,2.0f, 0.1f,2.0f);
-	planewing = createRectangle(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,  0.7f,-0.3f, 1.0f,-0.3f, 0.5f,0.0f, .8f,0.0f);
+	ENEMY_PLATFORM_WALL2 = createRectangle(0.2f,0.2f,0.2f,0.2f,0.2f,0.2f, -0.5f,-0.5f,  0.5f,-0.5f,  -0.5f,0.5f,  0.5f,0.5f);
+
+	ENEMY_PLATFORM_WALL3 = createRectangle(0.4f,0.4f,0.4f,0.4f,0.4f,0.4f, -0.5f,-0.5f,  0.5f,-0.5f,  -0.5f,0.5f,  0.5f,0.5f);
+	DUMMYBOX = createRectangle(1.0f,1.0f,1.0f,1.0f,1.0f,1.0f, -.1f,-0.1f,  0.1f,-0.1f,  -.1f,0.1f,  .1f,0.1f);
+	PLANE_NOSE = createTriangle(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f, -.5f,0.0f , 0.0f,0.15f, 0.0f,-0.15);
+
+	PLANE_BODY_1 = createRectangle(0.4f,0.4f,0.4f,0.4f,0.4f,0.4f,  0.0f,-0.15f, 0.4f,-0.2f, 0.0f,0.15f, 0.4f,0.2f);
+	PLANE_BODY_2 = createRectangle(0.5f,0.5f,0.5f,0.5f,0.5f,0.5f, 0.4f,-0.18f, 1.0f,-0.18f, 0.4f,0.18f, 1.0f,0.18f);
+	PLANE_BODY_3 = createRectangle(0.2f,0.2f,0.2f,0.2f,0.2f,0.2f,  1.0f,-0.2f, 1.4f,-0.15f, 1.0f,.2f, 1.4f,0.1f);
+	PLANE_COCKPIT = createCircle(0.2f,0.06f ,0.0f, 0.25f,108);
+
+	PLANE_TAIL  = createRectangle(0.0,0.0,0.0,0.0,0.0,0.0, 1.0f,0.2f, 1.4f,0.1f , 1.3f,0.6f, 1.5f,0.6f);
+	
+	PLANE_WING = createRectangle(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,  0.7f,-0.3f, 1.0f,-0.3f, 0.5f,0.0f, .8f,0.0f);
 
 	for(int i=0;i<1000;i++)
-		tankbullets[i] = createCircle(1.5f,0.0f,0.0f,0.1,108);
+		TANK_BULLETS[i] = createCircle(1.5f,0.0f,0.0f,0.1,108);
 
-	smokeupper = createTriangle(1.0f,1.0f,1.0f,1.0f,1.0f,1.0f, 1.5f,0.0f , 1.5f,0.2f, 1.7f,0.1);
-	smokelower = createTriangle(1.0f,1.0f,1.0f,1.0f,1.0f,1.0f, 1.5f,0.0f , 1.5f,-0.2f, 1.7f,-0.1);
+	SMOKE_UPPER = createTriangle(1.0f,1.0f,1.0f,1.0f,1.0f,1.0f, 1.5f,0.0f , 1.5f,0.2f, 1.7f,0.1);
+	SMOKE_LOWER = createTriangle(1.0f,1.0f,1.0f,1.0f,1.0f,1.0f, 1.5f,0.0f , 1.5f,-0.2f, 1.7f,-0.1);
+
+
+	for(int i=0;i<10000;i++)
+	{
+		enemybullets[i] = createRectangle(0.0,0.0,0.0,0.0,0.0,0.0, 0.0f,0.0f, 0.8f,0.0f , 0.0f,0.2f, 0.8f,0.2f);
+		//planebullets[i] = createCircle(0.0f,0.0f,0.0f,1.0f,108); 
+	}
+
+
+	tankshield = createCircle(0.0f,0.0f,0.0f,1.8,108);
 
 
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
@@ -929,13 +1219,12 @@ int main (int argc, char** argv)
 	double last_update_time = glfwGetTime(), current_time;
 	while (!glfwWindowShouldClose(window)) 
 	{
-		 glfwGetCursorPos(window,&x,&y);
-		 x=x/40.0;
-		 y=y/40.0;
-		 x-=10.0f;
-		 y-=10.0f;
-		 y*=-1.0f;
-		// cout<<x<<" "<<y<<endl;
+		 glfwGetCursorPos(window,&CURSOR_X,&CURSOR_Y);
+		 CURSOR_X=CURSOR_X/40.0;
+		 CURSOR_Y=CURSOR_Y/40.0;
+		 CURSOR_X-=10.0f;
+		 CURSOR_Y-=10.0f;
+		 CURSOR_Y*=-1.0f;
 		 draw();
         	 glfwSwapBuffers(window);
         	 glfwPollEvents();
