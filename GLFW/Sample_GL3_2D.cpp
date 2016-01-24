@@ -143,6 +143,12 @@ float camera_zoom=0;
 float camera_zoomout=0;
 
 
+float redbar[100];
+float greenbar[100];
+float bluebar[100];
+
+
+
 int fallstop1=1;
 int fallstop2=1;
 int fallstop3=1;
@@ -159,12 +165,12 @@ int greyboxlimit=0;
 float enemystandwallangle=0.0f;
 float enemystandwallangleadd=0.0f;
 
-
 int showblackbox=1;
 int showgreybox=1;
 int showwhitebox=1;
 
-
+int quitgame=0;
+int healthlimit=16;
 
 
 VAO *GROUND,*SKY,*WHEELS[20],*TANK_BODY_UPPER,*TANK_BODY_LOWER,*TANK_TURRET_BASE,*TANK_SPROCKET_LEFT;
@@ -173,7 +179,8 @@ VAO *ENEMY_TURRET_BASE,*ENEMY_TURRET_RING,*ENEMY_TURRET_BODY,*ENEMY_TURRET_GUN,*
 VAO *DUMMYBOX,*SMOKE_LOWER,*SMOKE_UPPER,*TANK_GUN,*TANK_GUN_BASE,*TANK_GUN_HANDLE;
 VAO *PLANE_NOSE,*PLANE_BODY_1,*PLANE_BODY_2,*PLANE_BODY_3,*PLANE_TAIL,*PLANE_WING,*PLANE_COCKPIT,*TANK_BULLETS[100000];
 VAO *TANK_GUN_BARREL,*TANK_GUN_TRIGGER,*enemybullets[100000],*tankshield,*ENEMY_PLATFORM_WALL2,*ENEMY_PLATFORM2,*ENEMY_PLATFORM3;
-VAO * ENEMY_PLATFORM_WALL3,*ENEMY_STAND_WALL,*enemywallhinge1,*enemywallhinge2,*energybar,*energybaroutline;
+VAO * ENEMY_PLATFORM_WALL3,*ENEMY_STAND_WALL,*enemywallhinge1,*enemywallhinge2,*energybar,*energybaroutline,*energyliquid;
+VAO * healthbars[100],*healthbarback,*healthbaroutline;
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path) {
 
 	GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
@@ -333,6 +340,8 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 				DECELERATION = BALL_VEL_Y/20.0;
 				SHOW_BALL = 1;
 				ENEMY_TURRET_HIT_LOCK=CHAINS_HIT_LOCK=1;
+				ENERGY_TIMER=0;
+				healthlimit--;
 				break;
 			case GLFW_KEY_UP:
 				camera_up=0;
@@ -551,6 +560,11 @@ VAO * createRectangleOutline (float r1,float g1,float b1,float r2,float g2,float
 
 void draw ()
 {
+
+
+
+	energyliquid = createRectangle(.0,1.0,.0,.0,1.0,.0, 0.1f,0.2f, 0.9f,0.2f , 0.1f,max(0.2,7.8*ENERGY_TIMER/170.0), 0.9f,max(0.2,7.4*ENERGY_TIMER/170.0));
+
 	if(blackblocky -0.01 <=whiteblocky && blackblocky+0.01>=whiteblocky && greyblocky -0.01 <=whiteblocky && greyblocky+0.01>=whiteblocky)
 		alldown=1;
 	if(alldown)
@@ -1051,6 +1065,8 @@ void draw ()
 
 	if(ENERGY_TIMER_LOCK)
 		ENERGY_TIMER+=4;
+	if(ENERGY_TIMER>=170)
+		ENERGY_TIMER=0;
 
 	PLANE_POS_X+=TRANSLATE_PLANE_BY;
 	if(PLANE_POS_X<=-20)
@@ -1294,7 +1310,7 @@ void draw ()
 
 
 	Matrices.model = glm::mat4(1.0f);
-	glm::mat4 penergybarout = glm::translate (glm::vec3(-9,0, 0.0f)); 
+	glm::mat4 penergybarout = glm::translate (glm::vec3(-9.5,0, 0.0f)); 
 	Matrices.model*= penergybarout;
 	MVP = VP * Matrices.model;
 	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -1303,11 +1319,60 @@ void draw ()
 
 
 	Matrices.model = glm::mat4(1.0f);
-	glm::mat4 penergybar = glm::translate (glm::vec3(-9,0, 0.0f)); 
+	glm::mat4 penergybar = glm::translate (glm::vec3(-9.5,0, 0.0f)); 
 	Matrices.model*= penergybar;
 	MVP = VP * Matrices.model;
 	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
 	draw3DObject(energybar);
+
+
+	Matrices.model = glm::mat4(1.0f);
+	glm::mat4 penergybarliq = glm::translate (glm::vec3(-9.5,0, 0.0f)); 
+	Matrices.model*= penergybarliq;
+	MVP = VP * Matrices.model;
+	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+	draw3DObject(energyliquid);
+
+
+	Matrices.model = glm::mat4(1.0f);
+	glm::mat4 phealth1 = glm::translate (glm::vec3(-8.4,8, 0.0f)); 
+	Matrices.model*= phealth1;
+	MVP = VP * Matrices.model;
+	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+	draw3DObject(healthbaroutline);
+
+	Matrices.model = glm::mat4(1.0f);
+	glm::mat4 phealth2 = glm::translate (glm::vec3(-8.4,8, 0.0f)); 
+	Matrices.model*= phealth2;
+	MVP = VP * Matrices.model;
+	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+	draw3DObject(healthbarback);
+
+	
+	float lenbar=0;
+	for(int i=0;i<21;i++)
+	{
+		healthbars[i]=createRectangle(redbar[healthlimit]/255.0,greenbar[healthlimit]/255.0,bluebar[healthlimit]/255.0 ,redbar[healthlimit]/255.0,greenbar[healthlimit]/255.0,bluebar[healthlimit]/255.0 ,.4f+lenbar,0.2f, 0.65f+lenbar,0.2f , 0.4f+lenbar,1.0f, 0.65f+lenbar,1.0f);
+		lenbar+=0.35;
+	}
+
+	
+	for(int i=0;i<=healthlimit;i++)
+	{
+		Matrices.model = glm::mat4(1.0f);
+		glm::mat4 phealth3 = glm::translate (glm::vec3(-8.5,8, 0.0f)); 
+		Matrices.model*= phealth3;
+		MVP = VP * Matrices.model;
+		glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+		draw3DObject(healthbars[i]);
+	}
+	if(healthlimit<0)
+		quitgame=1;
+
+
+
+
+
 
 
 }
@@ -1342,7 +1407,24 @@ GLFWwindow* initGLFW (int width, int height)
 
 void initGL (GLFWwindow* window, int width, int height)
 {
-
+	redbar[0]=255;
+	redbar[1]=238;
+	redbar[2]=205;
+	redbar[3]=205;greenbar[3]=55;
+	redbar[4]=238;greenbar[4]=64;
+	redbar[5]=238;greenbar[5]=118;
+	redbar[6]=255;greenbar[6]=165;
+	redbar[7]=255;greenbar[7]=193;bluebar[7]=37;
+	redbar[8]=255;greenbar[8]=215;	
+	redbar[9]=238;greenbar[9]=238;
+	redbar[10]=255;greenbar[10]=255;
+	redbar[11]=192;greenbar[11]=255;bluebar[11]=62;
+	redbar[12]=173;greenbar[12]=255;bluebar[12]=47;
+	redbar[13]=127;greenbar[13]=255;
+	greenbar[14]=205;
+	greenbar[15]=238;
+	greenbar[16]=255;
+	
 	GROUND = createRectangle(.545f,.27f,.07f, .134f,.545f,.134f, -10,-9,  10,-9,  -10,-8,  10,-8); 
 	SKY = createRectangle(.596f,.96f,1,.117f,.564f,1, -10,-9.0f,  10,-9.0f,  -10,10,  10,10);                  //colours bottom first.
 
@@ -1363,9 +1445,6 @@ void initGL (GLFWwindow* window, int width, int height)
 	TANK_TURRET_END =createRectangle(0.15f,0.15f,0.15f,0.15f,0.15f,0.15f, 0.8f,-0.2f, 1.0f,-0.2f, 0.8f,0.2f, 1.0f,0.2f);
 
 	TANK_GUN_BASE = createRectangle(0.15f,0.15f,0.15f,0.15f,0.15f,0.15f, 0.0f,0.0f, 0.4f,0.0f, 0.1f,0.6f, 0.3f,0.6f);
-
-	//tankgunring  = createRectangle(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f, 0.0f,0.0f, 1.0f,0.0f, 0.0f,0.2f, 1.0f,0.2f);
-
 
 
 	TANK_GUN_HANDLE = createRectangle(0.2f,0.2f,0.2f,0.2f,0.2f,0.2f, -0.25f,-0.15f, 0.25f,-0.15f, -0.25f,0.15f, 0.25f,0.15f);
@@ -1423,10 +1502,7 @@ void initGL (GLFWwindow* window, int width, int height)
 		//planebullets[i] = createCircle(0.0f,0.0f,0.0f,1.0f,108); 
 	}
 
-
 	tankshield = createCircle(0.0f,0.0f,0.0f,1.8,108);
-
-
 	ENEMY_STAND_WALL =createRectangle(0.0,0.0,0.0,0.0,0.0,0.0, 0.0f,0.0f, 5.0f,0.0f , 0.0f,0.4f, 5.0f,0.4f);
 
 
@@ -1434,9 +1510,18 @@ void initGL (GLFWwindow* window, int width, int height)
 	enemywallhinge2=createCircle(0.0,0.0,0.0,0.08f,108);
 
 
-	energybaroutline=createRectangle(0.0,0.0,0.0,0.0,0.0,0.0, 0.0f,0.0f, 1.0f,0.0f , 0.0f,7.0f, 1.0f,7.0f);
-	energybar=createRectangle(1.0,1.0,1.0,1.0,1.0,1.0, 0.2f,0.2f, 0.8f,0.2f , 0.2f,6.8f, 0.8f,6.8f);
+	energybaroutline=createRectangle(0.0,0.0,0.0,0.0,0.0,0.0, 0.0f,0.0f, 1.0f,0.0f , 0.0f,8.0f, 1.0f,8.0f);
+	energybar=createRectangle(135.0/255.0,206/255.0,250/255.0,0,178.0/255.0,238.0/255.0, 0.1f,0.2f, 0.9f,0.2f , 0.1f,7.8f, 0.9f,7.8f);
 
+	healthbaroutline=createRectangle(0.0,0.0,0.0,0.0,0.0,0.0, 0.0f,0.0f, 6.5f,0.0f , 0.0f,1.2f, 6.5f,1.2f);
+	healthbarback=createRectangle(1,1,1,1,1,1, 0.2f,0.1f, 6.3f,0.1f , 0.2f,1.1f, 6.3f,1.1f);
+	//healthbarback=createRectangle(0,178.0/255.0,238.0/255.0, 0,178.0/255.0,238.0/255.0, 0.2f,0.1f, 6.3f,0.1f , 0.2f,1.1f, 6.3f,1.1f);
+	float lenbar=0;
+	for(int i=0;i<21;i++)
+	{
+		healthbars[i]=createRectangle(0.0,0.0,0.0,0.0,0.0,0.0, 0.4f+lenbar,0.2f, 0.65f+lenbar,0.2f , 0.4f+lenbar,1.0f, 0.65f+lenbar,1.0f);
+		lenbar+=0.35;
+	}
 
 
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
@@ -1461,6 +1546,8 @@ int main (int argc, char** argv)
 	double last_update_time = glfwGetTime(), current_time;
 	while (!glfwWindowShouldClose(window)) 
 	{
+		if(quitgame)
+			quit(window);
 		glfwGetCursorPos(window,&CURSOR_X,&CURSOR_Y);
 		CURSOR_X=CURSOR_X/40.0;
 		if(camera_up)
@@ -1468,7 +1555,6 @@ int main (int argc, char** argv)
 			orthodowny+=0.05f;
 			orthoupy+=0.05f;
 		}
-
 		if(camera_down)
 		{
 			orthodowny-=0.05f;
