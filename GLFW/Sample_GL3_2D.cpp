@@ -87,7 +87,7 @@ int target_1;
 //****************************//
 
 float TRANSLATE_PLANE_BY = -.1;
-float PLANE_POS_X = -12;
+float PLANE_POS_X = 12;
 float PLANE_POS_Y = 0.0f;
 int PLANE_HIT_COUNT = 0;
 
@@ -147,7 +147,7 @@ float redbar[100];
 float greenbar[100];
 float bluebar[100];
 
-
+int hitenemybullets[100000];
 
 int fallstop1=1;
 int fallstop2=1;
@@ -169,6 +169,16 @@ int showblackbox=1;
 int showgreybox=1;
 int showwhitebox=1;
 
+vector<int> sevensegdecoder[10];
+int score=0;
+
+
+float planebulletsx[100];
+float planebulletsy[100];
+int planebulletlimit=1;
+float planebulletacc[100];
+
+
 int quitgame=0;
 int healthlimit=16;
 
@@ -180,7 +190,7 @@ VAO *DUMMYBOX,*SMOKE_LOWER,*SMOKE_UPPER,*TANK_GUN,*TANK_GUN_BASE,*TANK_GUN_HANDL
 VAO *PLANE_NOSE,*PLANE_BODY_1,*PLANE_BODY_2,*PLANE_BODY_3,*PLANE_TAIL,*PLANE_WING,*PLANE_COCKPIT,*TANK_BULLETS[100000];
 VAO *TANK_GUN_BARREL,*TANK_GUN_TRIGGER,*enemybullets[100000],*tankshield,*ENEMY_PLATFORM_WALL2,*ENEMY_PLATFORM2,*ENEMY_PLATFORM3;
 VAO * ENEMY_PLATFORM_WALL3,*ENEMY_STAND_WALL,*enemywallhinge1,*enemywallhinge2,*energybar,*energybaroutline,*energyliquid;
-VAO * healthbars[100],*healthbarback,*healthbaroutline;
+VAO * healthbars[100],*healthbarback,*healthbaroutline,*sevenseg[15],*planebullets[10000];
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path) {
 
 	GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
@@ -341,7 +351,6 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 				SHOW_BALL = 1;
 				ENEMY_TURRET_HIT_LOCK=CHAINS_HIT_LOCK=1;
 				ENERGY_TIMER=0;
-				healthlimit--;
 				break;
 			case GLFW_KEY_UP:
 				camera_up=0;
@@ -706,10 +715,11 @@ void draw ()
 	{
 		if(TANK_POS_X>11.2f)
 			TANK_POS_X=11.2f;
-		if(BALL_POS_X-6.9f>=3.5f & BALL_POS_Y-7.0<=-3.5f)
+	if(BALL_POS_X-6.9f>=3.5f && BALL_POS_X-6.9f<=4.5 & BALL_POS_Y-7.0<=-3.5f)
 		{
 			BALL_VEL_X*=-1;
 			hitback=1;
+			cout<<"This one"<<endl;
 		}
 	}
 	if(SHOW_BALL)
@@ -726,7 +736,6 @@ void draw ()
 	}
 	if(BALL_VEL_X<=0 && !hitback)
 	{
-		// cout<<"not hitback executed"<<endl;
 		BALL_VEL_X=0.0f;
 		BALL_VEL_Y=0.0f;
 		DECELERATION=0.0f;
@@ -737,7 +746,6 @@ void draw ()
 		BALL_VEL_X+=0.005;
 		if(BALL_VEL_X>=0)
 		{
-			//	  cout<<"hitback"<<BALL_VEL_X<<endl;
 			BALL_VEL_X=0.0f;
 			BALL_VEL_Y=0.0f;
 			DECELERATION=0.0f;
@@ -745,13 +753,14 @@ void draw ()
 		}
 	}
 
-	if(CHAINS_HIT_LOCK && BALL_POS_X-6.9f >=9.0f && BALL_POS_X -6.9f <= 10.0f && BALL_POS_Y <= 0.2f && BALL_POS_Y >=-2)//-6.7)
+	if(CHAINS_HIT_LOCK && BALL_POS_X-6.9f >=9.0f && BALL_POS_X -6.9f <= 10.0f && BALL_POS_Y <= 0.2f && BALL_POS_Y >=-2)
 	{
 		CHAINS_HIT_COUNT++;
 		CHAINS_HIT_LOCK=0;
 	}
 	if(!SHOW_CHAINS && ENEMY_TURRET_HIT_LOCK && BALL_POS_X -6.9 >= 8.4f && BALL_POS_X-6.9 <=10.0f && BALL_POS_Y <= -1.1f && BALL_POS_Y >= -9.0f)
 	{
+		score+=5;
 		ENEMY_TURRET_HIT_COUNT++;
 		ENEMY_TURRET_HIT_LOCK=0;
 	}
@@ -913,13 +922,6 @@ void draw ()
 
 	}
 
-	// if(fabs(whiteblockx-blackblockx)<0.6 && abs(blackblocky-whiteblocky)<=1)
-	// {
-	//	  moved2=0;
-	// message2=0;
-	//	  whiteblocky=blackblocky+1.0f;/////////////////////////////////////////////////////////////////
-	// }
-
 	if(!alldownlast && fabs(whiteblocky-greyblocky)>1.1)
 	{
 		side2=0;
@@ -1074,6 +1076,13 @@ void draw ()
 		PLANE_POS_X=12;
 		PLANE_POS_Y=float((rand()%15)-5);
 		PLANE_HIT_COUNT=0;
+		planebulletlimit=rand()%5;
+		for(int i=0;i<=planebulletlimit;i++)
+		{
+			planebulletsx[i]=(rand()%16)-8.0f;
+			planebulletsy[i]=PLANE_POS_Y-0.5;
+			planebulletacc[i]=0;
+		}
 	}
 
 	Matrices.model = glm::mat4(1.0f);
@@ -1130,6 +1139,7 @@ void draw ()
 		PLANE_POS_Y=float((rand()%15)-5);
 		PLANE_POS_X=12;
 		PLANE_HIT_COUNT=0;
+		score+=1;
 	}
 
 	/* Matrices.model = glm::mat4(1.0f);                                   
@@ -1189,6 +1199,7 @@ void draw ()
 				PLANE_POS_Y=float((rand()%15)-5);
 				PLANE_POS_X=12;
 				PLANE_HIT_COUNT=0;
+				score+=2;
 			}
 
 			glm::mat4 tankbull1 = glm::translate (glm::vec3(BULLET_POS_X[i], BULLET_POS_Y[i], 0.0f));
@@ -1251,7 +1262,16 @@ void draw ()
 		{
 			enemybulletspos[i]-=0.5;
 			if(enemybulletspos[i]+6.0f-showtankshield*1.25f<=-(10-(1+TANK_POS_X)))
+			{
+				if(!showtankshield && !hitenemybullets[i])
+				{
+					hitenemybullets[i]=1;
+					healthlimit--;
+				}
+				if(showtankshield)
+					hitenemybullets[i]=1;
 				continue;
+			}
 			if(((whiteboxlimit>0 && whiteboxlimit<200) ||(blackboxlimit>0 && blackboxlimit<200)|| (greyboxlimit>0 && greyboxlimit<200 ) )&& enemybulletspos[i]+8.0f<6.0f)
 					continue;
 			Matrices.model = glm::mat4(1.0f);
@@ -1371,9 +1391,48 @@ void draw ()
 
 
 
+	int temp=score;
+	float scorex=0.0f;
+	while(1)
+	{
 
+		for(int i=0;i<sevensegdecoder[temp%10].size();i++)
+		{
+			Matrices.model = glm::mat4(1.0f);
+			glm::mat4 pscore = glm::translate (glm::vec3(7.5f+scorex,7.5f, 0.0f)); 
+			Matrices.model*= pscore;
+			MVP = VP * Matrices.model;
+			glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+			draw3DObject(sevenseg[sevensegdecoder[temp%10][i]]);
+		}
+		temp/=10;
+		if(!temp)
+			break;
+		scorex-=1;
+	}
 
+	for(int i=0;i<=planebulletlimit;i++)
+	{
+		if(PLANE_POS_X+0.4f<=planebulletsx[i])
+		{
+			if(planebulletsy[i]<=-15)
+				planebulletsx[i]=-20;
+			if(planebulletsy[i]<=-8.0f && TANK_POS_X-8.0f<=planebulletsx[i] && TANK_POS_X-8.0f+2>=planebulletsx[i])
+			{
+				healthlimit--;
+				planebulletsx[i]=-20;
+			}
 
+			Matrices.model = glm::mat4(1.0f);
+			glm::mat4 planebull = glm::translate (glm::vec3(planebulletsx[i],planebulletsy[i],0.0f)); 
+			Matrices.model*= planebull;
+			MVP = VP * Matrices.model;
+			glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+			draw3DObject(planebullets[i]);
+			planebulletacc[i]+=0.008;
+			planebulletsy[i]-=planebulletacc[i];
+		}
+	}
 
 }
 
@@ -1424,7 +1483,33 @@ void initGL (GLFWwindow* window, int width, int height)
 	greenbar[14]=205;
 	greenbar[15]=238;
 	greenbar[16]=255;
-	
+
+
+
+
+
+
+
+	planebulletlimit=rand()%5;
+	for(int i=0;i<=planebulletlimit;i++)
+	{
+		planebulletsx[i]=(rand()%20)-10.0f;
+		planebulletsy[i]=PLANE_POS_Y-0.5;
+		planebulletacc[i]=0;
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
 	GROUND = createRectangle(.545f,.27f,.07f, .134f,.545f,.134f, -10,-9,  10,-9,  -10,-8,  10,-8); 
 	SKY = createRectangle(.596f,.96f,1,.117f,.564f,1, -10,-9.0f,  10,-9.0f,  -10,10,  10,10);                  //colours bottom first.
 
@@ -1523,7 +1608,83 @@ void initGL (GLFWwindow* window, int width, int height)
 		lenbar+=0.35;
 	}
 
+	for(int i=0;i<10;i++)
+		planebullets[i]=createCircle(0.0,0.0,0.0,0.2f,108);
 
+
+
+
+
+
+
+
+	sevenseg[0]=createRectangle(0.0,0.0,0.0,0.0,0.0,0.0, 0.0f,0.0f, 0.8f,0.0f , 0.1f,0.1f, 0.7f,0.1f);
+	sevenseg[1]=createRectangle(0.0,0.0,0.0,0.0,0.0,0.0, 0.0f,0.1f, 0.1f,0.2f , 0.0f,.9f, 0.1f,0.8f);
+	sevenseg[2]=createRectangle(0.0,0.0,0.0,0.0,0.0,0.0, 0.0f,1.0f, 0.1f,1.1f , 0.0f,1.8f, 0.1f,1.7f);
+	sevenseg[3]=createRectangle(0.0,0.0,0.0,0.0,0.0,0.0, 0.1f,1.8f, 0.7f,1.8f , 0.0f,1.9f, 0.8f,1.9f);
+	sevenseg[4]=createRectangle(0.0,0.0,0.0,0.0,0.0,0.0, 0.7f,1.1f, 0.8f,1.0f , 0.7f,1.7f, 0.8f,1.8f);
+	sevenseg[5]=createRectangle(0.0,0.0,0.0,0.0,0.0,0.0, 0.7f,0.2f, 0.8f,0.1f , 0.7f,0.8f, 0.8f,0.9f);
+	sevenseg[6]=createRectangle(0.0,0.0,0.0,0.0,0.0,0.0, 0.1f,0.95f, 0.7f,0.95f , 0.2f,1.0f, 0.6f,1.0f);
+	sevenseg[7]=createRectangle(0.0,0.0,0.0,0.0,0.0,0.0, 0.2f,0.9f, 0.6f,0.9f , 0.1f,0.95f, 0.7f,0.95f);
+
+
+	for(int i=0;i<6;i++)
+		sevensegdecoder[0].push_back(i);
+	sevensegdecoder[1].push_back(4);
+	sevensegdecoder[1].push_back(5);
+	
+	sevensegdecoder[2].push_back(3);
+	sevensegdecoder[2].push_back(4);
+	sevensegdecoder[2].push_back(6);
+	sevensegdecoder[2].push_back(7);
+	sevensegdecoder[2].push_back(1);
+	sevensegdecoder[2].push_back(0);
+
+	sevensegdecoder[3].push_back(3);
+	sevensegdecoder[3].push_back(4);
+	sevensegdecoder[3].push_back(6);
+	sevensegdecoder[3].push_back(7);
+	sevensegdecoder[3].push_back(5);
+	sevensegdecoder[3].push_back(0);
+
+	sevensegdecoder[4].push_back(2);
+	sevensegdecoder[4].push_back(6);
+	sevensegdecoder[4].push_back(7);
+	sevensegdecoder[4].push_back(4);
+	sevensegdecoder[4].push_back(5);
+
+
+	sevensegdecoder[5].push_back(3);
+	sevensegdecoder[5].push_back(2);
+	sevensegdecoder[5].push_back(6);
+	sevensegdecoder[5].push_back(7);
+	sevensegdecoder[5].push_back(5);
+	sevensegdecoder[5].push_back(0);
+	
+	
+	sevensegdecoder[6].push_back(3);
+	sevensegdecoder[6].push_back(2);
+	sevensegdecoder[6].push_back(6);
+	sevensegdecoder[6].push_back(7);
+	sevensegdecoder[6].push_back(5);
+	sevensegdecoder[6].push_back(1);
+	sevensegdecoder[6].push_back(0);
+	
+	
+	sevensegdecoder[7].push_back(3);
+	sevensegdecoder[7].push_back(4);
+	sevensegdecoder[7].push_back(5);
+
+	for(int i=0;i<8;i++)
+		sevensegdecoder[8].push_back(i);
+	
+	sevensegdecoder[9].push_back(2);
+	sevensegdecoder[9].push_back(3);
+	sevensegdecoder[9].push_back(4);
+	sevensegdecoder[9].push_back(6);
+	sevensegdecoder[9].push_back(7);
+	sevensegdecoder[9].push_back(5);
+	
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
 	Matrices.MatrixID = glGetUniformLocation(programID, "MVP");
 	//reshapeWindow (window, width, height);
