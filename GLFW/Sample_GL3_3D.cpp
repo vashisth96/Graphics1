@@ -33,26 +33,51 @@ GLuint programID;
 
 
 const int BOARDWIDTH=20;
-const int BOARDLENGTH=20;
+const int BOARDLENGTH=40;
 
 
 int BOARD_MAP[BOARDLENGTH][BOARDWIDTH] ={
+	
+
+
 	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,1,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0},
-	{0,0,0,2,2,2,2,0,1,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0},
+
+	{0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0},
+	
+	{0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,2,0,1,1,1,1,0,0,0,0,0,0},
 	{0,0,0,0,0,0,0,0,0,0,1,0,0,1,1,0,0,0,0,0},
 	{0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0},
 	{1,1,1,1,0,0,0,0,0,2,2,2,1,1,0,0,0,0,0,0},
-	{1,0,0,1,1,1,0,1,1,1,1,1,1,1,0,0,0,0,0,0},
-	{1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{1,0,0,1,1,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0},
+	{1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0},
 	{1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
@@ -75,12 +100,12 @@ int isincrementdown=0;
 int isincrementup=0;
 int colour_state=0;
 
-float MAN_POS_X=2.0*1.6*((BOARDLENGTH-1)-BOARDLENGTH/2.0);
-float MAN_POS_Y=-2.0*1.6*BOARDWIDTH/2.0;
+float MAN_POS_X=-7;//2.0*1.6*((BOARDLENGTH-1)-BOARDLENGTH/2.0);
+float MAN_POS_Y=-9;//-2.0*1.6*BOARDWIDTH/2.0;
 float MAN_POS_Z =0.4;
 float MAN_VEL_Z=0.3;
 
-float DECELERATION=MAN_VEL_Z/15.0;
+float DECELERATION=MAN_VEL_Z/18.0;
 float thigh_angle=0.0;
 int thigh_direction=1;
 bool isjump=0;
@@ -90,16 +115,34 @@ int  man_rotatedirection=1;
 int man_movedirection=1;
 float man_angle = 0;
 
+
 vector<pair<float,float> > blockcenters;
 vector<bool> rotate_status;
 vector<pair<float,float> > woodbrickcenters;
 vector<bool> brick_rotate_status;
-int brick_fall_status[1000];
+vector<pair<int,bool> > greenblock_rotate_status;
+vector<float> blockcenters_z;
+vector<float> woodbrickcenters_z;
+vector<float> greenblock_z;
+vector<pair<float,float> > movingblockscent;
+vector<float> movingblocks_z;
+vector<pair<int,bool> >movingblocks_rotate_status;
+vector<int> movingblocks_status;
+
+
+bool brick_fall_status[1000];
 float brick_height[1000];
-
-
+int brickfall_wait[1000];
+bool brickfall_start[1000];
 bool firsttime=true;
 bool isfall=false;
+bool CROSSOVER;
+
+
+float store_z;
+
+float GATE_POS_X=-16;
+float GATE_POS_Y=-9.5;
 
 
 float leg_angle =0;
@@ -108,8 +151,7 @@ int leg_direction=1;
 
 VAO * BLOCKS[1000000],*LOWER_BODY,*UPPER_BODY,*LEGS[2],*THIGHS1,*SHOE[2];
 VAO *THIGHS[2],*NECK,*UPPER_HEAD,*LOWER_HEAD,*MIDDLE_HEAD,*SHOULDER[2],*HANDS[2];
-VAO * WOODBRICK_1;
-
+VAO * WOODBRICK_1,*GREEN_BLOCK[3],*GATE_BASE1,*GATE_BASE2,*GATE_L_MIDDLE,*GATE_U_MIDDLE,*GATE_TOP;
 
 
 /*******************************************************************************************/
@@ -138,12 +180,38 @@ void check_fall(void)
 	int flag=0;
 	for(int i=0;i<blockcenters.size();i++)
 	{
-		if(blockcenters[i].first-1.6<=MAN_POS_X && blockcenters[i].first+1.6>=MAN_POS_X && MAN_POS_Y>=blockcenters[i].second-1.6 && MAN_POS_Y<=blockcenters[i].second+1.6 && MAN_POS_Z>=0.4)
-	//	if(pow((blockcenters[i].first-MAN_POS_X),2)+pow(blockcenters[i].second-MAN_POS_Y,2)<=1 && MAN_POS_Z>=0.4)
+		if(blockcenters[i].first-1.6<=MAN_POS_X && blockcenters[i].first+1.6>=MAN_POS_X && 
+				MAN_POS_Y>=blockcenters[i].second-1.6 && MAN_POS_Y<=blockcenters[i].second+1.6 && MAN_POS_Z>=blockcenters_z[i])
+			//isfall)//&& MAN_POS_Z>=0.3)
 		{
 			flag=1;
 		}
 	}
+//	for(int i=0;i<movingblockscent.size();i++)
+//	{
+//		if(movingblockscent[i].first-1.6<=MAN_POS_X && movingblockscent[i].first+1.6>=MAN_POS_X && 
+//				MAN_POS_Y>=movingblockscent[i].second-1.6 && MAN_POS_Y<=movingblockscent[i].second+1.6 && MAN_POS_Z>=movingblocks_z[i])
+//		{
+//			flag=1;
+//		}
+//	}
+	
+	if(isjump)
+		flag=1;
+	for(int i=0;i<woodbrickcenters.size();i++)
+		if(woodbrickcenters[i].first-1.6<=MAN_POS_X && woodbrickcenters[i].first+1.6>=MAN_POS_X &&
+				MAN_POS_Y>=woodbrickcenters[i].second-1.6 && MAN_POS_Y<=woodbrickcenters[i].second+1.6 && MAN_POS_Z>=woodbrickcenters_z[i] && MAN_POS_Z<=woodbrickcenters_z[i]+0.1)//!isfall)//MAN_POS_Z>=0.4)
+		{
+			if(brick_fall_status[i]){
+				flag=0;
+				break;
+			}
+			else flag=1;
+
+		}
+	
+
+
 	if(!flag)
 		isfall=true;
 	else 
@@ -151,6 +219,32 @@ void check_fall(void)
 
 }
 
+void markbrick(void){
+	for(int i=0;i<woodbrickcenters.size();i++)
+		if(woodbrickcenters[i].first-1.6<=MAN_POS_X && woodbrickcenters[i].first+1.6>=MAN_POS_X && MAN_POS_Y>=woodbrickcenters[i].second-1.6 && MAN_POS_Y<=woodbrickcenters[i].second+1.6 && MAN_POS_Z>=woodbrickcenters_z[i] && MAN_POS_Z<=woodbrickcenters_z[i]+0.1)//MAN_POS_Z>=0.4 && MAN_POS_Z<=0.6)
+			brickfall_start[i]=true;
+}
+
+
+void updatebrickwait(void){
+	for(int i=0;i<woodbrickcenters.size();i++){
+		if(brickfall_start[i])
+			brickfall_wait[i]++;
+	}
+}
+
+
+void checkbrickfall(void){
+	for(int i=0;i<woodbrickcenters.size();i++)
+		if(brickfall_wait[i]>60)
+			brick_fall_status[i]=true;
+}
+
+void brickfall(void){
+	for(int i=0;i<woodbrickcenters.size();i++)
+		if(brick_fall_status[i])
+			brick_height[i]--;
+}
 
 
 
@@ -311,7 +405,11 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 				quit(window);
 				break;
 			case GLFW_KEY_SPACE:
+				if(!isfall){
+				if(!isjump)
+					store_z=MAN_POS_Z;
 				isjump=1;
+				}
 				break;
 			case GLFW_KEY_UP:
 				isincrementup=1;
@@ -407,19 +505,6 @@ VAO * createCube(cubeColour X,int same,float x1=-1.5,float  y1=-1.5,float z1=0 ,
 		X.c6=X.c1;
 	}
 	//vertices from bottom out ,up out ,up in ,bottom in
-	/*	float x1=-1;float y1=-1;float z1=0;
-		float x2=1;float y2=-1;float z2=0;
-
-		float x3=-1;float y3=-1;float z3=1;
-		float x4=1;float y4=-1;float z4=1;
-
-		float x5=-1;float y5=1;float z5=1;
-		float x6=1;float y6=1; float z6=1;
-
-		float x7=-1;float y7=1;float z7=0;
-		float x8=1;float y8=1;float z8=0;
-		*/	
-	//colours
 	float r1=ExtractRed(X.c1);float g1=ExtractGreen(X.c1);float b1=ExtractBlue(X.c1);
 	float r2=ExtractRed(X.c2);float g2=ExtractGreen(X.c2);float b2=ExtractBlue(X.c2);
 	float r3=ExtractRed(X.c3);float g3=ExtractGreen(X.c3);float b3=ExtractBlue(X.c3);
@@ -428,155 +513,20 @@ VAO * createCube(cubeColour X,int same,float x1=-1.5,float  y1=-1.5,float z1=0 ,
 	float r6=ExtractRed(X.c6);float g6=ExtractGreen(X.c6);float b6=ExtractBlue(X.c6);
 
 	GLfloat g_vertex_buffer_data[] = {
-		x1,y1,z1,//1
-		x3,y3,z3,//-1.0f,-1.0f, 1.0f,                  //- 1 -1 -1 x1
-		x5,y5,z5,
-
-		x8,y8,z8,//1.0f, 1.0f,-1.0f,//2   /////////////
-		x1,y1,z1,
-		x7,y7,z7,
-
-		x4,y4,z4,//3
-		x1,y1,z1,
-		x2,y2,z2,
-
-		x8,y8,z8,//2  //////////////
-		x2,y2,z2,
-		x1,y1,z1,
-
-		x1,y1,z1,//1
-		x5,y5,z5,
-		x7,y7,z7,
-
-		x4,y4,z4,//3
-		x3,y3,z3,//-1.0f,-1.0f, 1.0f,
-		x1,y1,z1,
-
-		x5,y5,z5,//4
-		x3,y3,z3,//-1.0f,-1.0f, 1.0f,
-		x4,y4,z4,
-
-		x6,y6,z6,//5
-		x2,y2,z2,
-		x8,y8,z8, ////////////////
-
-		x2,y2,z2,//5
-		x6,y6,z6,
-		x4,y4,z4,
-
-		x6,y6,z6,//6
-		x8,y8,z8, //////////////
-		x7,y7,z7,
-
-		x6,y6,z6,//6
-		x7,y7,z7,
-		x5,y5,z5,
-
-		x6,y6,z6,//4
-		x5,y5,z5,
-		x4,y4,z4
+		x1,y1,z1,x3,y3,z3,x5,y5,z5,x8,y8,z8,x1,y1,z1,x7,y7,z7,x4,y4,z4,x1,y1,z1,x2,y2,z2,x8,y8,z8,x2,y2,z2,x1,y1,z1,x1,y1,z1,x5,y5,z5,x7,y7,z7,x4,y4,z4,
+		x3,y3,z3,x1,y1,z1,x5,y5,z5,x3,y3,z3,x4,y4,z4,x6,y6,z6,x2,y2,z2,x8,y8,z8,x2,y2,z2,x6,y6,z6,x4,y4,z4,x6,y6,z6,x8,y8,z8,x7,y7,z7,x6,y6,z6,x7,y7,z7,
+		x5,y5,z5,x6,y6,z6,x5,y5,z5,x4,y4,z4
 	};
-
-
 	GLfloat g_color_buffer_data[] = {
-		r1,g1,b1,
-		r2,g2,b2,
-		r3,g3,b3,
-
-		r4,g4,b4,
-		r1,g1,b1,
-		r4,g4,b4,
-
-		r2,g2,b2,
-		r1,g1,b1,
-		r1,g1,b1,
-
-		r4,g4,b4,
-		r1,g1,b1,
-		r1,g1,b1,
-
-		r1,g1,b1,
-		r3,g3,b3,
-		r4,g4,b4,
-
-		r2,g2,b2,
-		r2,g2,b2,
-		r1,g1,b1,
-
-		r3,g3,b3,
-		r2,g2,b2,
-		r2,g2,b2,
-
-		r3,g3,b3,    
-		r1,g1,b1,    
-		r4,g4,b4,    
-
-		r1,g1,b1,    
-		r3,g3,b3,    
-		r2,g2,b2,    
-
-		r3,g3,b3,
-		r4,g4,b4,
-		r4,g4,b4,
-
-		r3,g3,b3,
-		r4,g4,b4,
-		r3,g3,b3,
-
-		r3,g3,b3,
-		r3,g3,b3,
-		r2,g2,b2,
+		r1,g1,b1,r2,g2,b2,r3,g3,b3,r4,g4,b4,r1,g1,b1,r4,g4,b4,r2,g2,b2,r1,g1,b1,r1,g1,b1,r4,g4,b4,r1,g1,b1,r1,g1,b1,r1,g1,b1,r3,g3,b3,r4,g4,b4,r2,g2,b2,
+		r2,g2,b2,r1,g1,b1,r3,g3,b3,r2,g2,b2,r2,g2,b2,r3,g3,b3,r1,g1,b1,r4,g4,b4,r1,g1,b1,r3,g3,b3,r2,g2,b2,r3,g3,b3,r4,g4,b4,r4,g4,b4,r3,g3,b3,r4,g4,b4,
+		r3,g3,b3,r3,g3,b3,r3,g3,b3,r2,g2,b2
 	};
-
 	GLfloat g_color_buffer_data1[] = {
 
-		r3,g3,b3,
-		r3,g3,b3,
-		r3,g3,b3,
-
-		r4,g4,b4,
-		r4,g4,b4,
-		r4,g4,b4,
-
-		r5,g5,b5,
-		r5,g5,b5,
-		r5,g5,b5,
-
-		r4,g4,b4,
-		r4,g4,b4,
-		r4,g4,b4,
-
-		r3,g3,b3,
-		r3,g3,b3,
-		r3,g3,b3,
-
-		r5,g5,b5,
-		r5,g5,b5,
-		r5,g5,b5,
-
-		r2,g2,b2,
-		r2,g2,b2,
-		r2,g2,b2,
-
-		r1,g1,b1,
-		r1,g1,b1,
-		r1,g1,b1,
-
-		r1,g1,b1,
-		r1,g1,b1,
-		r1,g1,b1,
-
-		r6,g6,b6,
-		r6,g6,b6,
-		r6,g6,b6,
-
-		r6,g6,b6,
-		r6,g6,b6,
-		r6,g6,b6,
-
-		r2,g2,b2,
-		r2,g2,b2,
-		r2,g2,b2,
+		r3,g3,b3,r3,g3,b3,r3,g3,b3,r4,g4,b4,r4,g4,b4,r4,g4,b4,r5,g5,b5,r5,g5,b5,r5,g5,b5,r4,g4,b4,r4,g4,b4,r4,g4,b4,r3,g3,b3,r3,g3,b3,r3,g3,b3,r5,g5,b5,
+		r5,g5,b5,r5,g5,b5,r2,g2,b2,r2,g2,b2,r2,g2,b2,r1,g1,b1,r1,g1,b1,r1,g1,b1,r1,g1,b1,r1,g1,b1,r1,g1,b1,r6,g6,b6,r6,g6,b6,r6,g6,b6,r6,g6,b6,r6,g6,b6,
+		r6,g6,b6,r2,g2,b2,r2,g2,b2,r2,g2,b2
 	};
 
 	if(colour_state)
@@ -594,31 +544,99 @@ void draw ()
 	glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram (programID);
 
-	glm::vec3 eye ( 14*cos(camera_rotation_angle*M_PI/180.0f),14*sin(camera_rotation_angle*M_PI/180.0f),14*sin(camera_angle*M_PI/180.0));
-	glm::vec3 target (0, 0, 0);
+	glm::vec3 eye ( -25+20*cos(camera_rotation_angle*M_PI/180.0f),20*sin(camera_rotation_angle*M_PI/180.0f),20*sin(camera_angle*M_PI/180.0));
+	glm::vec3 target (-25, 0, 0);
 	glm::vec3 up (0, 0, 1);
 	Matrices.view = glm::lookAt( eye, target, up );
 	glm::mat4 VP = Matrices.projection * Matrices.view;
 	glm::mat4 MVP;
 
 
+	if(MAN_POS_X+16<GATE_POS_X)
+		CROSSOVER=true;
+	else
+		CROSSOVER=false;
+
+
+	if(CROSSOVER){
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	}
+
+
+
+
+
+
+
+
+
 	if(isjump && !isfall)
 	{
 		MAN_POS_Z+=MAN_VEL_Z;
 		MAN_VEL_Z-=DECELERATION;
-		if(MAN_POS_Z<=0.4)
-		{
+	
+		if(MAN_POS_Z<=store_z){
 			isjump=0;
+			MAN_POS_Z=store_z;
 			MAN_VEL_Z=0.3;
-			MAN_POS_Z=0.4;
 		}
+	//	if(MAN_POS_Z<=0.4)
+	//	{
+	//		isjump=0;
+	//		MAN_VEL_Z=0.3;
+	//		MAN_POS_Z=0.4;
+	//	}
 	}
 
-	if(MAN_POS_Z<=0.4)
-		isfall=true;
 
 
-	if(isfall)
+
+	cout<<"Position : "<<MAN_POS_Z<<" "<<" is fall "<<isfall<<endl;
+
+//	if(MAN_POS_Z<=0.4)
+//		isfall=true;
+
+
+	if(isfall && !isjump)
 		MAN_POS_Z-=0.1;
 
 	if(ismanrotate)
@@ -649,33 +667,46 @@ void draw ()
 
 
 
-
-
-
-
-
-
-
+	markbrick();
+	updatebrickwait();
+	checkbrickfall();
+	brickfall();
 
 	int it=0;
 	int it2=0;
-	for(float i = 0 ; i < BOARDWIDTH ; i++)
-		for(float j = 0 ; j < BOARDLENGTH ; j++){
+	int it3=0;
+	int it4=0;
+	for(float i = 0 ; i < BOARDLENGTH ; i++)
+		for(float j = 0 ; j < BOARDWIDTH ; j++){
 			if(BOARD_MAP[(int)i][(int)j]){
 				if(firsttime)
 				{
 					if(BOARD_MAP[(int)i][(int)j]==1){
-					blockcenters.push_back(make_pair((i*1.6-1.6*BOARDWIDTH/2)*2,(j*1.6-1.6*BOARDLENGTH/2)*2));
-					rotate_status.push_back(rand()&1);
+						blockcenters.push_back(make_pair((i*1.6-1.6*BOARDLENGTH/2)*2,(j*1.6-1.6*BOARDWIDTH/2)*2));
+						rotate_status.push_back(rand()&1);
+						blockcenters_z.push_back(0.4);
 					}
 					else if(BOARD_MAP[(int)i][(int)j]==2){
-						woodbrickcenters.push_back(make_pair((i*1.6-1.6*BOARDWIDTH/2)*2,(j*1.6-1.6*BOARDLENGTH/2)*2));
+						woodbrickcenters.push_back(make_pair((i*1.6-1.6*BOARDLENGTH/2)*2,(j*1.6-1.6*BOARDWIDTH/2)*2));
 						brick_rotate_status.push_back(rand()&1);
+						woodbrickcenters_z.push_back(0.4);
 					}
+					else if(BOARD_MAP[(int)i][(int)j]==3){
+						blockcenters.push_back(make_pair((i*1.6-1.6*BOARDLENGTH/2)*2,(j*1.6-1.6*BOARDWIDTH/2)*2));
+						greenblock_rotate_status.push_back(make_pair(rand()%2,rand()&1));
+						greenblock_z.push_back(0.4);
+					}
+					else if(BOARD_MAP[(int)i][(int)j]==4){
+						movingblockscent.push_back(make_pair((i*1.6-1.6*BOARDLENGTH/2)*2,(j*1.6-1.6*BOARDWIDTH/2)*2));
+						movingblocks_rotate_status.push_back(make_pair(rand()%2,rand()&1));
+						movingblocks_z.push_back(rand()%10-5);
+						movingblocks_status.push_back(rand()%2);
+					}
+
 				}
 				Matrices.model = glm::mat4(1.0f);
-				if(BOARD_MAP[(int)i][(int)j]==1){
-					glm::mat4 translateCube=glm::translate(glm::vec3((i*1.6-1.6*BOARDWIDTH/2)*2,(j*1.6-1.6*BOARDLENGTH/2)*2,0));
+				if(BOARD_MAP[(int)i][(int)j]==1 && !CROSSOVER){
+					glm::mat4 translateCube=glm::translate(glm::vec3((i*1.6-1.6*BOARDLENGTH/2)*2,(j*1.6-1.6*BOARDWIDTH/2)*2,0));
 					if(rotate_status[it]){
 						glm::mat4 rotatecube = glm::rotate((float)(90*M_PI/180.0f), glm::vec3(0,0,1));
 						Matrices.model *= (translateCube)*rotatecube;
@@ -687,9 +718,9 @@ void draw ()
 					draw3DObject(BLOCKS[0]);
 					it++;
 				}
-				else if(BOARD_MAP[(int)i][(int)j]==2){
+				else if(BOARD_MAP[(int)i][(int)j]==2 && !CROSSOVER){
 					glm::mat4 scaleCube=glm::scale(glm::vec3(0.9,0.3,0.5));
-					glm::mat4 translateCube=glm::translate(glm::vec3((i*1.6-1.6*BOARDWIDTH/2)*2,(j*1.6-1.6*BOARDLENGTH/2)*2,0));
+					glm::mat4 translateCube=glm::translate(glm::vec3((i*1.6-1.6*BOARDLENGTH/2)*2,(j*1.6-1.6*BOARDWIDTH/2)*2,brick_height[it2]));
 					glm :: mat4 positionCube=glm::translate(glm::vec3(0,-1.0,0));
 					for(int l=1;l<=3;l++){
 						if(brick_rotate_status[it2]){
@@ -705,11 +736,157 @@ void draw ()
 					}
 					it2++;
 				}
+				else if(BOARD_MAP[(int)i][(int)j]==3 && CROSSOVER){
+					glm::mat4 translateCube=glm::translate(glm::vec3((i*1.6-1.6*BOARDLENGTH/2)*2,(j*1.6-1.6*BOARDWIDTH/2)*2,0));
+					if(greenblock_rotate_status[it3].second){
+						glm::mat4 rotatecube = glm::rotate((float)(90*M_PI/180.0f), glm::vec3(0,0,1));
+						Matrices.model *= (translateCube)*rotatecube;
+					}
+					else
+						Matrices.model *= (translateCube);
+					MVP = VP * Matrices.model;
+					glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+					draw3DObject(GREEN_BLOCK[greenblock_rotate_status[it3].first]);
+					it3++;
+				}
+				else if(BOARD_MAP[(int)i][(int)j]==4 && CROSSOVER){
+					glm::mat4 tCube=glm::translate(glm::vec3((i*1.6-1.6*BOARDLENGTH/2)*2,(j*1.6-1.6*BOARDWIDTH/2)*2,movingblocks_z[it4]-0.4));
+					if(movingblocks_rotate_status[it4].second){
+						glm::mat4 rotatecube = glm::rotate((float)(90*M_PI/180.0f), glm::vec3(0,0,1));
+						Matrices.model *= (tCube)*rotatecube;
+					}
+					else
+						Matrices.model *= (tCube);
+					MVP = VP * Matrices.model;
+					glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+					draw3DObject(GREEN_BLOCK[movingblocks_rotate_status[it4].first]);
+				
+					if(movingblocks_status[it4]){
+						if(movingblocks_z[it4]>=5.4)
+							movingblocks_status[it4]=0;
+						else 
+							movingblocks_z[it4]+=0.1;
+					}
+					else{
+						if(movingblocks_z[it4]<=-8)
+							movingblocks_status[it4]=1;
+						else
+							movingblocks_z[it4]-=0.1;
+					}
+					
+					
+					
+					
+					
+					it4++;
+				}
+
+
+
 			}
 		}
 	firsttime=false;
 
+	
+	
+	
+	
+	
 	check_fall();
+
+
+
+
+
+
+
+
+
+	if(!CROSSOVER){
+
+	Matrices.model = glm::mat4(1.0f);
+	glm:: mat4 tbase1=glm::translate(glm::vec3(GATE_POS_X,GATE_POS_Y-5,0));
+	Matrices.model *= tbase1;
+	MVP = VP * Matrices.model;
+	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+	draw3DObject(GATE_BASE1);
+
+	MVP*=glm::translate(glm::vec3(0,10,0));
+	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+	draw3DObject(GATE_BASE1);
+
+	Matrices.model = glm::mat4(1.0f);
+	glm:: mat4 tbase2=glm::translate(glm::vec3(GATE_POS_X,GATE_POS_Y-5,0));
+	Matrices.model *= tbase2;
+	MVP = VP * Matrices.model;
+	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+	draw3DObject(GATE_BASE2);
+
+	MVP*=glm::translate(glm::vec3(0,10,0));
+	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+	draw3DObject(GATE_BASE2);
+
+
+	Matrices.model = glm::mat4(1.0f);
+	glm:: mat4 tmid1=glm::translate(glm::vec3(GATE_POS_X,GATE_POS_Y-5,0));
+	Matrices.model *= tmid1;
+	MVP = VP * Matrices.model;
+	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+	draw3DObject(GATE_L_MIDDLE);
+
+	Matrices.model *= glm::translate(glm::vec3(0,10,0));
+	MVP = VP * Matrices.model;
+	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+	draw3DObject(GATE_L_MIDDLE);
+
+	Matrices.model = glm::mat4(1.0f);
+	tmid1=glm::translate(glm::vec3(GATE_POS_X,GATE_POS_Y-5,0));
+	glm::mat4 rotatemid1 = glm::rotate((float)(180*M_PI/180.0f), glm::vec3(0,0,1));
+	Matrices.model *= tmid1*rotatemid1;
+	MVP = VP * Matrices.model;
+	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+	draw3DObject(GATE_L_MIDDLE);
+
+	tmid1=glm::translate(glm::vec3(0,10,0));
+	Matrices.model = tmid1*Matrices.model;
+	MVP = VP * Matrices.model;
+	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+	draw3DObject(GATE_L_MIDDLE);
+
+
+	Matrices.model = glm::mat4(1.0f);
+	glm:: mat4 tmid2=glm::translate(glm::vec3(GATE_POS_X,GATE_POS_Y-5,0));
+	Matrices.model *= tmid2;
+	MVP = VP * Matrices.model;
+	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+	draw3DObject(GATE_U_MIDDLE);
+
+	tmid2=glm::translate(glm::vec3(GATE_POS_X,5+GATE_POS_Y,0));
+	Matrices.model = tmid2;
+	MVP = VP * Matrices.model;
+	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+	draw3DObject(GATE_U_MIDDLE);
+
+
+	Matrices.model = glm::mat4(1.0f);
+	glm:: mat4 Stop=glm::scale(glm::vec3(1,1.2,1));
+	glm:: mat4 Ttop=glm::translate(glm::vec3(GATE_POS_X,GATE_POS_Y,0));
+	Matrices.model *= Ttop*Stop;
+	MVP = VP * Matrices.model;
+	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+	draw3DObject(GATE_TOP);
+
+	}
+
+
+
+
+
+
+
+
+
+
 
 
 	Matrices.model = glm::mat4(1.0f);
@@ -918,12 +1095,15 @@ void initGL (GLFWwindow* window, int width, int height)
 	MIDDLE_HEAD=createCube(X,1, -0.2,-0.2,0, 0.2,-0.2,0, -0.2,-0.2,0.3 ,0.2,-0.2,.3, -0.2,0.2,.3, 0.2,0.2,.3, -0.2,0.2,0 ,0.2,0.2,0);
 	LOWER_HEAD=createCube(X,1,  -0.1,-0.1,0, 0.1,-0.1,0, -0.2,-0.2,0.2 ,0.2,-0.2,.2, -0.2,0.2,.2, 0.2,0.2,.2, -0.1,0.1,0 ,0.1,0.1,0);
 
+	HANDS[0]=createCube(X,1,-0.1,-0.1,0, 0.1,-0.1,0, -0.15,-0.15,1.0 ,0.15,-0.15,1.0, -0.15,0.15,1.0, 0.15,0.15,1.0, -0.1,0.1,0 ,0.1,0.1,0);
+	HANDS[1]=createCube(X,1,-0.1,-0.1,0, 0.1,-0.1,0, -0.15,-0.15,1.0 ,0.15,-0.15,1.0, -0.15,0.15,1.0, 0.15,0.15,1.0, -0.1,0.1,0 ,0.1,0.1,0);
 
+
+	X.c1=170;
 	SHOULDER[0]=createCube(X,1,-0.2,-0.2,-0.8, 0.2,-0.2,-0.8, -0.1,-0.2,-0.2 ,0.2,-0.2,0, -0.1,0.2,-0.2, 0.2,0.2,0, -0.2,0.2,-0.8 ,0.2,0.2,-0.8);
 	SHOULDER[1]=createCube(X,1,-0.2,-0.2,-0.8, 0.2,-0.2,-0.8, -0.2,-0.2,0 ,0.1,-0.2,-0.2, -0.2,0.2,0, 0.1,0.2,-0.2, -0.2,0.2,-0.8 ,0.2,0.2,-0.8);
 
-	HANDS[0]=createCube(X,1,-0.1,-0.1,0, 0.1,-0.1,0, -0.15,-0.15,1.0 ,0.15,-0.15,1.0, -0.15,0.15,1.0, 0.15,0.15,1.0, -0.1,0.1,0 ,0.1,0.1,0);
-	HANDS[1]=createCube(X,1,-0.1,-0.1,0, 0.1,-0.1,0, -0.15,-0.15,1.0 ,0.15,-0.15,1.0, -0.15,0.15,1.0, 0.15,0.15,1.0, -0.1,0.1,0 ,0.1,0.1,0);
+
 
 
 	//BLACK STUFF
@@ -941,7 +1121,38 @@ void initGL (GLFWwindow* window, int width, int height)
 	X.c1=107066038;X.c2=139090043;X.c3=X.c1;X.c4=X.c1;
 	WOODBRICK_1=createCube(X,0);
 
+	//GREEN BLOCKS
+	X.c1=156102031;X.c4=X.c1;X.c2=139000;X.c3=100000;
+	GREEN_BLOCK[0]=createCube(X,0, -1.5,-1.5,-1 ,1.5,-1.5,-1 ,-1.5,-1.5,1 ,1.5,-1.5,1 ,-1.5,1.5,1 ,1.5,1.5,1 ,-1.5,1.5,-1,1.5,1.5,-1);
+	X.c1=156102031;X.c4=X.c1;X.c2=128000;X.c3=48128020;	
+	GREEN_BLOCK[1]=createCube(X,0, -1.5,-1.5,-1 ,1.5,-1.5,-1 ,-1.5,-1.5,1 ,1.5,-1.5,1 ,-1.5,1.5,1 ,1.5,1.5,1 ,-1.5,1.5,-1,1.5,1.5,-1);
+	X.c1=156102031;X.c4=X.c1;X.c2=139000;X.c3=34139034;	
+	GREEN_BLOCK[2]=createCube(X,0, -1.5,-1.5,-1 ,1.5,-1.5,-1 ,-1.5,-1.5,1 ,1.5,-1.5,1 ,-1.5,1.5,1 ,1.5,1.5,1 ,-1.5,1.5,-1,1.5,1.5,-1);
 
+
+
+
+
+
+	X.c1=100;
+	GATE_BASE1 = createCube(X,1, -1.5,-1.5,1 ,1.5,-1.5,1, -1,-1,7 ,1,-1,7, -1,1,7, 1,1,7, -1.5,1.5,1 ,1.5,1.5,1);
+
+	X.c1=100000;
+	GATE_BASE2 = createCube(X,1, 1.5,-1.5,1, 1.5,1.5,1, 1.5-(8.0/3.0),-1,3 ,1.5-(8.0/3.0),1,3,  4,-.7,2.5, 4,.7,2.5, 4,-.7,1 ,4,.7,1);
+	
+	X.c1=100000000;
+	GATE_L_MIDDLE =createCube(X,1, -1,0,7, -.5,-1,7, -1,0,9 ,-0.5,-1,9, 1,0,9, .5,-1,9, 1,0,7 ,.5,-1,7);
+	
+	X.c1=100;
+	GATE_U_MIDDLE =createCube(X,1, -1,0,9, 0,-1,9, -1,0,10 ,0,-1,10, 0,1,10 ,1,0,10 , 0,1,9, 1,0,9 );
+	
+	X.c1=0;
+	GATE_TOP = createCube(X,1, -0.8,-5,10, -0.8,5,10, -1,-5.5,11 ,-1,5.5,11, 1,-5.5,11 ,1,5.5,11, 0.8,-5,10, 0.8,5,10 );
+
+
+
+
+	
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
 	Matrices.MatrixID = glGetUniformLocation(programID, "MVP");
 	reshapeWindow (window, width, height);
