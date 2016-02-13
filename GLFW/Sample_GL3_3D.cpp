@@ -35,6 +35,10 @@ GLuint programID;
 const int BOARDWIDTH=20;
 const int BOARDLENGTH=40;
 
+int VIEWS=0;
+float VIEW_2X=60;
+bool incrementview_2x=false;
+bool decrementview_2x=false;
 
 int BOARD_MAP[BOARDLENGTH][BOARDWIDTH] ={
 	
@@ -58,7 +62,7 @@ int BOARD_MAP[BOARDLENGTH][BOARDWIDTH] ={
 	{0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0},
@@ -90,7 +94,11 @@ typedef struct cubeColour{
 }cubeColour;
 
 
+float camera4_x=0;
+float camera4_y=2;
 
+float camera5_x;
+float camera5_y;
 
 float camera_rotation_angle=0;
 float camera_angle=0;
@@ -128,6 +136,8 @@ vector<pair<float,float> > movingblockscent;
 vector<float> movingblocks_z;
 vector<pair<int,bool> >movingblocks_rotate_status;
 vector<int> movingblocks_status;
+
+int isonblock=-1;
 
 
 bool brick_fall_status[1000];
@@ -187,20 +197,30 @@ void check_fall(void)
 			flag=1;
 		}
 	}
-//	for(int i=0;i<movingblockscent.size();i++)
-//	{
-//		if(movingblockscent[i].first-1.6<=MAN_POS_X && movingblockscent[i].first+1.6>=MAN_POS_X && 
-//				MAN_POS_Y>=movingblockscent[i].second-1.6 && MAN_POS_Y<=movingblockscent[i].second+1.6 && MAN_POS_Z>=movingblocks_z[i])
-//		{
-//			flag=1;
-//		}
-//	}
-	
+	int temponblock=-1;
+	for(int i=0;i<movingblockscent.size();i++)
+	{
+		if(movingblockscent[i].first-1.6<=MAN_POS_X && movingblockscent[i].first+1.6>=MAN_POS_X && 
+				MAN_POS_Y>=movingblockscent[i].second-1.6 && MAN_POS_Y<=movingblockscent[i].second+1.6 && 
+				MAN_POS_Z>=movingblocks_z[i]-0.1 && MAN_POS_Z <=movingblocks_z[i]+0.1)
+		{
+			MAN_POS_Z=movingblocks_z[i];
+			isjump=0;
+			flag=1;
+			temponblock=i;
+			break;
+		}
+	}
+	if(temponblock!=-1)
+		isonblock=temponblock;
+	else
+		isonblock=-1;
 	if(isjump)
 		flag=1;
 	for(int i=0;i<woodbrickcenters.size();i++)
 		if(woodbrickcenters[i].first-1.6<=MAN_POS_X && woodbrickcenters[i].first+1.6>=MAN_POS_X &&
-				MAN_POS_Y>=woodbrickcenters[i].second-1.6 && MAN_POS_Y<=woodbrickcenters[i].second+1.6 && MAN_POS_Z>=woodbrickcenters_z[i] && MAN_POS_Z<=woodbrickcenters_z[i]+0.1)//!isfall)//MAN_POS_Z>=0.4)
+				MAN_POS_Y>=woodbrickcenters[i].second-1.6 && MAN_POS_Y<=woodbrickcenters[i].second+1.6 && 
+				MAN_POS_Z>=woodbrickcenters_z[i] && MAN_POS_Z<=woodbrickcenters_z[i]+0.1)//!isfall)//MAN_POS_Z>=0.4)
 		{
 			if(brick_fall_status[i]){
 				flag=0;
@@ -372,9 +392,11 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 			case GLFW_KEY_C:
 				break;
 			case GLFW_KEY_UP:
+				if(VIEWS==2)decrementview_2x=false;
 				isincrementup=0;
 				break;
 			case GLFW_KEY_DOWN:
+				if(VIEWS==2)incrementview_2x=false;
 				isincrementdown=0;
 				break;
 			case GLFW_KEY_LEFT:
@@ -406,16 +428,18 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 				break;
 			case GLFW_KEY_SPACE:
 				if(!isfall){
-				if(!isjump)
-					store_z=MAN_POS_Z;
-				isjump=1;
+					if(!isjump)
+						store_z=MAN_POS_Z;
+					isjump=1;
 				}
 				break;
 			case GLFW_KEY_UP:
 				isincrementup=1;
+				if(VIEWS==2)decrementview_2x=true;
 				break;
 			case GLFW_KEY_DOWN:
 				isincrementdown=1;
+				if(VIEWS==2)incrementview_2x=true;
 				break;
 			case GLFW_KEY_LEFT:
 				isincrementleft=1;
@@ -439,7 +463,8 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 				man_rotatedirection=-1;
 				ismanrotate=1;
 				break;
-
+			case GLFW_KEY_T:
+				VIEWS++;
 			default:
 				break;
 		}
@@ -544,10 +569,53 @@ void draw ()
 	glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram (programID);
 
-	glm::vec3 eye ( -25+20*cos(camera_rotation_angle*M_PI/180.0f),20*sin(camera_rotation_angle*M_PI/180.0f),20*sin(camera_angle*M_PI/180.0));
-	glm::vec3 target (-25, 0, 0);
-	glm::vec3 up (0, 0, 1);
-	Matrices.view = glm::lookAt( eye, target, up );
+
+
+	if(ismanrotate)
+	{
+		man_angle+=man_rotatedirection*2;
+		camera4_x=-4*sin(man_angle*M_PI/180.0);
+		camera4_y=4*cos(man_angle*M_PI/180.0);
+	}
+
+
+	if(incrementview_2x)
+		VIEW_2X+=0.5;
+	else if(decrementview_2x)
+		VIEW_2X-=0.5;
+
+
+
+
+
+	if(VIEWS==0){
+		glm::vec3 eye ( -25+20*cos(camera_rotation_angle*M_PI/180.0f),20*sin(camera_rotation_angle*M_PI/180.0f),40*sin(camera_angle*M_PI/180.0));
+		glm::vec3 target (-25, 0, 0);
+		glm:: vec3 up(0,0,1);
+		Matrices.view = glm::lookAt( eye, target, up );
+	}
+	else if(VIEWS==1){
+		Matrices.view = glm::lookAt( glm:: vec3(MAN_POS_X,MAN_POS_Y,22), glm::vec3(MAN_POS_X,MAN_POS_Y,-1), glm::vec3(-1,0,0) );
+	}
+	else if(VIEWS==2){
+		Matrices.view = glm::lookAt( glm:: vec3(VIEW_2X,-12,30), glm::vec3(VIEW_2X-60,-12,0), glm::vec3(-1,0,1) );
+	}
+	else if(VIEWS==3){
+	Matrices.view = glm::lookAt( glm:: vec3(MAN_POS_X+camera4_x/8.0,MAN_POS_Y+camera4_y/8.0,MAN_POS_Z+4), glm::vec3(MAN_POS_X+camera4_x,MAN_POS_Y+camera4_y,MAN_POS_Z+4), glm::vec3(0,0,1) );
+	}
+	else if(VIEWS==4){
+	Matrices.view = glm::lookAt( glm:: vec3(MAN_POS_X-2*camera4_x,MAN_POS_Y-2*camera4_y,MAN_POS_Z+12), glm::vec3(MAN_POS_X+camera4_x,MAN_POS_Y+camera4_y,MAN_POS_Z+12), glm::vec3(0,0,1) );
+	
+	}
+
+
+
+
+
+	VIEWS=VIEWS%5;
+	
+	
+	
 	glm::mat4 VP = Matrices.projection * Matrices.view;
 	glm::mat4 MVP;
 
@@ -556,54 +624,6 @@ void draw ()
 		CROSSOVER=true;
 	else
 		CROSSOVER=false;
-
-
-	if(CROSSOVER){
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	}
-
-
-
-
 
 
 
@@ -619,12 +639,6 @@ void draw ()
 			MAN_POS_Z=store_z;
 			MAN_VEL_Z=0.3;
 		}
-	//	if(MAN_POS_Z<=0.4)
-	//	{
-	//		isjump=0;
-	//		MAN_VEL_Z=0.3;
-	//		MAN_POS_Z=0.4;
-	//	}
 	}
 
 
@@ -638,9 +652,6 @@ void draw ()
 
 	if(isfall && !isjump)
 		MAN_POS_Z-=0.1;
-
-	if(ismanrotate)
-		man_angle+=man_rotatedirection*2;
 	if(ismanincrement)
 	{
 		MAN_POS_X +=man_movedirection*.15*cos((man_angle+90)*M_PI/180.0);
@@ -773,11 +784,8 @@ void draw ()
 						else
 							movingblocks_z[it4]-=0.1;
 					}
-					
-					
-					
-					
-					
+					if(isonblock==it4)
+						MAN_POS_Z=movingblocks_z[it4];
 					it4++;
 				}
 
