@@ -38,109 +38,115 @@ const int BOARDLENGTH=80;
 float allcenters[BOARDLENGTH][BOARDWIDTH];
 
 
-int VIEWS=0;
-float VIEW_2X=60;
+int VIEWS=1;
+float VIEW_2X=130;
 bool incrementview_2x=false;
 bool decrementview_2x=false;
+int lock=0;
+
+double CURSOR_X,CURSOR_Y;
+float STORE_MOUSE_X,STORE_MOUSE_Y;
+bool ismousemove=false;
+float hori_angle,ver_angle;
+float final_hori_angle=0;
+float final_ver_angle=0;
+float VIEWLEN=30;
+
+
+int LEVEL_I[]={0,51,36,13,0};
+float level_posx[]={0,125,44,-3,-70};
+float level_posy[]={0,-32,-10,-10,0};
+int LEVEL_NUM=1;
 
 int BOARD_MAP[BOARDLENGTH][BOARDWIDTH] ={
 	
 
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0},
-
-
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0},
-
-
-
-
-
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0},
-
-
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0},
-
-
-
-
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0},
-
-	{0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,1,0,4,0,1,0,0,0,0,0,0,0,0},//////
+	{0,0,0,0,0,0,0,3,1,1,1,3,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,3,2,2,2,3,0,0,2,3,3,3,3,3},
+	{0,0,0,0,0,0,0,0,0,2,0,0,0,2,0,3,0,4,0,3},
+	{0,4,0,4,2,0,0,0,0,0,2,0,2,0,0,3,0,0,0,3},
+	{0,0,0,0,2,0,0,0,2,0,0,2,0,0,0,3,0,4,0,3},
+	{1,1,0,0,4,0,0,4,0,4,0,0,0,0,0,3,0,0,0,3},
+	{1,1,0,0,2,0,2,0,0,0,2,0,0,0,0,3,0,4,0,3},
+	{1,0,0,0,0,4,0,0,0,4,0,0,0,0,0,3,0,0,0,3},
+	{0,0,3,0,0,0,0,0,2,0,0,0,0,0,0,3,0,4,0,3},
+	{4,4,0,1,1,1,0,0,0,4,1,1,1,0,0,0,0,0,0,0},
+	{0,0,3,0,0,1,2,2,0,0,1,0,1,0,0,0,2,2,2,0},
+	{0,0,0,0,0,0,2,2,0,0,1,1,1,2,2,3,3,2,3,3},
 	
-	{0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},//
+	{0,0,0,0,0,0,2,2,2,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,2,2,2,0,0,0,0,0,0,0,0,0,0,0},
+	
+	{0,0,0,0,0,0,0,2,0,0,3,2,2,0,3,3,2,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,4,2,0,0},
+	{0,0,3,3,3,3,3,3,3,3,3,3,0,0,0,2,0,2,0,0},
+	{0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,2,4,2,0,0},
+	{0,4,0,0,0,0,0,0,0,0,0,2,0,0,0,2,0,2,0,0},
+	{0,0,4,2,0,4,4,4,4,0,0,2,0,0,0,2,4,2,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,4,0,0,0,2,0,2,0,0},
+	{0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,2,2,2,0,0},
+	{0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,2,0,2,0,0},
+	{0,0,0,3,3,2,3,0,0,0,0,4,0,0,0,2,4,2,0,0},
+	{0,2,0,2,2,2,2,2,3,0,0,4,0,0,0,2,0,2,0,0},
+	{0,2,0,3,3,2,3,0,0,0,2,2,0,0,0,2,4,2,0,0},
+	{0,0,0,0,0,0,0,0,2,2,2,2,2,2,0,2,0,2,0,0},
+	{0,3,3,0,0,0,0,0,0,2,2,2,2,0,0,2,4,2,0,0},
+	{0,3,2,2,2,2,0,4,0,0,3,3,0,0,0,2,0,2,0,0},
+	{0,3,3,0,0,0,0,0,0,0,3,3,3,3,3,3,3,3,3,0},
+	{0,0,0,0,0,0,0,3,0,0,3,3,3,3,3,3,3,3,3,0},
+	
+	{0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0},//
+	{0,0,0,0,0,0,3,3,3,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,3,3,3,0,0,0,0,0,0,0,0,0,0,0},
+	
 	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,2,0,1,1,1,1,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,0,0,1,0,0,1,1,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0},
-	{1,1,1,1,0,0,0,0,0,2,2,2,1,1,0,0,0,0,0,0},
-	{1,0,0,1,1,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0},
-	{1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0},
-	{1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,3,0,3,3,0,3,0,3,3,0,3,3,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,3,3},
+	{0,0,0,3,3,3,0,0,0,0,0,3,0,0,0,0,0,0,0,0},
+	{0,3,3,3,3,3,3,3,0,3,3,0,3,3,0,0,0,0,0,3},
+	{3,0,0,3,3,3,0,0,0,0,0,3,0,3,0,0,3,3,3,3},
+	{0,3,0,0,0,0,0,0,0,0,0,0,0,3,3,3,3,0,0,0},
+	{0,0,3,0,3,3,3,3,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0},
+	
+	{0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},//
+	{0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0},
+
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0},
+	{1,1,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0},
+	{1,1,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0},
+	{1,1,2,2,2,2,2,1,2,2,2,2,2,1,0,0,0,0,0,0},
+	{1,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0},
+	{0,0,1,1,0,2,0,1,1,0,0,0,0,0,0,0,0,1,0,0},
+	{1,1,1,0,0,0,2,1,1,1,0,1,1,0,1,0,1,1,0,0},
+	{1,0,1,1,0,2,0,1,1,0,0,0,0,0,0,0,0,0,0,0},
 	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{1,1,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0},
+	{1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,0,0,0,0},
+	{1,1,0,0,0,0,1,0,0,0,1,0,0,0,2,1,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,1,0,0,0},
+	{0,0,0,0,0,0,0,0,1,1,0,0,2,0,0,0,0,1,0,0},
+	{1,1,1,1,1,1,2,2,1,1,1,1,0,0,0,0,0,1,0,0},
+	{1,0,1,0,0,0,0,0,1,1,0,0,1,0,0,0,1,0,0,0},
+	{1,1,1,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0},
+	{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0},
 };
 
 
@@ -149,38 +155,13 @@ int BOARD_ITEMS[BOARDLENGTH][BOARDWIDTH] ={
 	
 
 	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,1,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,1,0,3,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,1,0,3,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0},
-
-
 	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0},
-
-
-
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0},
 
@@ -197,26 +178,51 @@ int BOARD_ITEMS[BOARDLENGTH][BOARDWIDTH] ={
 	{0,0,0,0,0,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0},
 
 
+
 	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,1,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,1,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,1,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0},
+
+
+	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,4,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0},
+
+
+	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,3,0,0,0,1,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,1,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0},
 
 	{0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
@@ -269,11 +275,11 @@ int isincrementup=0;
 int colour_state=0;
 
 //-7
-//-9
-float MAN_POS_X= 40;//2.0*1.6*((BOARDLENGTH-1)-BOARDLENGTH/2.0);
-float MAN_POS_Y= -9;//-2.0*1.6*BOARDWIDTH/2.0;
-float MAN_POS_Z =0.4;
-float MAN_VEL_Z=0.3;
+//-
+float MAN_POS_X= level_posx[LEVEL_NUM];
+float MAN_POS_Y= level_posy[LEVEL_NUM];
+float MAN_POS_Z = 0.4;
+float MAN_VEL_Z = 0.3;
 
 float DECELERATION=MAN_VEL_Z/18.0;
 float thigh_angle=0.0;
@@ -302,7 +308,6 @@ vector<pair<float,float> > spikescenters;
 vector<float> spikes_z;
 
 
-
 int isonblock=-1;
 
 
@@ -319,7 +324,7 @@ bool CROSSOVER;
 
 float store_z;
 
-float GATE_POS_X=48;
+float GATE_POS_X=38;
 float GATE_POS_Y=-9.5;
 
 
@@ -355,11 +360,11 @@ float ExtractBlue(int x)
 void check_fall(void)
 {
 	int flag=0;
+	
 	for(int i=0;i<blockcenters.size();i++)
 	{
 		if(blockcenters[i].first-1.6<=MAN_POS_X && blockcenters[i].first+1.6>=MAN_POS_X && 
-				MAN_POS_Y>=blockcenters[i].second-1.6 && MAN_POS_Y<=blockcenters[i].second+1.6 && MAN_POS_Z>=blockcenters_z[i])
-			//isfall)//&& MAN_POS_Z>=0.3)
+				MAN_POS_Y>=blockcenters[i].second-1.6 && MAN_POS_Y<=blockcenters[i].second+1.6 && MAN_POS_Z>=blockcenters_z[i]-0.1)
 		{
 			flag=1;
 		}
@@ -378,12 +383,19 @@ void check_fall(void)
 			break;
 		}
 	}
+
+
+	
 	if(temponblock!=-1)
 		isonblock=temponblock;
 	else
 		isonblock=-1;
 	if(isjump)
 		flag=1;
+
+	
+	
+	
 	for(int i=0;i<woodbrickcenters.size();i++)
 		if(woodbrickcenters[i].first-1.6<=MAN_POS_X && woodbrickcenters[i].first+1.6>=MAN_POS_X &&
 				MAN_POS_Y>=woodbrickcenters[i].second-1.6 && MAN_POS_Y<=woodbrickcenters[i].second+1.6 && 
@@ -396,9 +408,6 @@ void check_fall(void)
 			else flag=1;
 
 		}
-	
-
-
 	if(!flag)
 		isfall=true;
 	else 
@@ -434,6 +443,22 @@ void brickfall(void){
 }
 
 
+
+void check_spike_hit(int i,int j,int itt){
+
+	if( spikescenters[itt].first-1.6<=MAN_POS_X && spikescenters[itt].first+1.6>=MAN_POS_X && MAN_POS_Y>=spikescenters[itt].second-1.6 && MAN_POS_Y<=spikescenters[itt].second+1.6 && MAN_POS_Z-1.8<=allcenters[(int)i][(int)j]+spikes_z[itt] && MAN_POS_Z-1.8>=allcenters[(int)i][(int)j]+spikes_z[itt]-2.5){
+	 MAN_POS_X= 40;
+	 MAN_POS_Y= -9;
+	 MAN_POS_Z =0.4;
+	}
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset){
+	if(yoffset==1)
+		VIEWLEN--;
+	if(yoffset==-1)
+		VIEWLEN++;
+}
 
 
 
@@ -656,9 +681,14 @@ void mouseButton (GLFWwindow* window, int button, int action, int mods)
 		case GLFW_MOUSE_BUTTON_LEFT:
 			if (action == GLFW_RELEASE)
 			{
+				ismousemove=false;
+				lock=1;
 			}
 			else 
 			{
+				ismousemove=true;
+				STORE_MOUSE_X=CURSOR_X;
+				STORE_MOUSE_Y=CURSOR_Y;
 			}
 			break;
 		case GLFW_MOUSE_BUTTON_RIGHT:
@@ -738,6 +768,8 @@ void draw ()
 
 
 
+
+
 	if(ismanrotate)
 	{
 		man_angle+=man_rotatedirection*2;
@@ -751,35 +783,38 @@ void draw ()
 	else if(decrementview_2x)
 		VIEW_2X-=0.5;
 
-
-
+	if(ismousemove){
+		hori_angle = ((STORE_MOUSE_X-CURSOR_X)/8.0)*M_PI/180.0;
+		ver_angle = ((CURSOR_Y-STORE_MOUSE_Y)/8.0)*M_PI/180.0;
+	}
+	if(!ismousemove && lock){
+		final_hori_angle += hori_angle;
+		final_ver_angle +=ver_angle;
+		hori_angle=0;
+		ver_angle=0;
+		lock=0;
+	}
 
 
 	if(VIEWS==0){
-		glm::vec3 eye ( 20+30*cos(camera_rotation_angle*M_PI/180.0f),30*sin(camera_rotation_angle*M_PI/180.0f),40*sin(camera_angle*M_PI/180.0));
-		glm::vec3 target (20, 0, 0);
+		glm::vec3 eye ( -80+40*cos(camera_rotation_angle*M_PI/180.0f),40*sin(camera_rotation_angle*M_PI/180.0f),40*sin(camera_angle*M_PI/180.0));
+		glm::vec3 target (-80, 0, 0);
 		glm:: vec3 up(0,0,1);
 		Matrices.view = glm::lookAt( eye, target, up );
 	}
-	else if(VIEWS==1){
+	else if(VIEWS==1)
 		Matrices.view = glm::lookAt( glm:: vec3(MAN_POS_X,MAN_POS_Y,22), glm::vec3(MAN_POS_X,MAN_POS_Y,-1), glm::vec3(-1,0,0) );
-	}
-	else if(VIEWS==2){
+	else if(VIEWS==2)
 		Matrices.view = glm::lookAt( glm:: vec3(VIEW_2X,-12,30), glm::vec3(VIEW_2X-60,-12,0), glm::vec3(-1,0,1) );
-	}
-	else if(VIEWS==3){
+	else if(VIEWS==3)
 	Matrices.view = glm::lookAt( glm:: vec3(MAN_POS_X+camera4_x/8.0,MAN_POS_Y+camera4_y/8.0,MAN_POS_Z+4), glm::vec3(MAN_POS_X+camera4_x,MAN_POS_Y+camera4_y,MAN_POS_Z+4), glm::vec3(0,0,1) );
-	}
-	else if(VIEWS==4){
-	Matrices.view = glm::lookAt( glm:: vec3(MAN_POS_X-2*camera4_x,MAN_POS_Y-2*camera4_y,MAN_POS_Z+11), glm::vec3(MAN_POS_X+camera4_x,MAN_POS_Y+camera4_y,MAN_POS_Z+11), glm::vec3(0,0,1) );
-	
-	}
+	else if(VIEWS==4)
+		Matrices.view = glm::lookAt( glm:: vec3(MAN_POS_X-2*camera4_x,MAN_POS_Y-2*camera4_y,MAN_POS_Z+11), glm::vec3(MAN_POS_X+camera4_x,MAN_POS_Y+camera4_y,MAN_POS_Z+11), glm::vec3(0,0,1) );
+	else if(VIEWS==5)
+		Matrices.view = glm::lookAt( glm:: vec3(90+VIEWLEN*cos(final_ver_angle+ver_angle)*cos( final_hori_angle+ hori_angle),-10+VIEWLEN*cos(final_ver_angle+ver_angle)*sin(final_hori_angle+ hori_angle),VIEWLEN*sin(final_ver_angle+ver_angle)), glm::vec3(90,-10,0), glm::vec3(0,0,1));
 
 
-
-
-
-	VIEWS=VIEWS%5;
+	VIEWS=VIEWS%6;
 	
 	
 	
@@ -787,11 +822,15 @@ void draw ()
 	glm::mat4 MVP;
 
 
-	if(MAN_POS_X+16<GATE_POS_X)
+	/*if(MAN_POS_X+5<GATE_POS_X)
 		CROSSOVER=true;
 	else
 		CROSSOVER=false;
+*/
 
+
+
+	cout<<MAN_POS_X<<" "<<MAN_POS_Y<<endl;
 
 
 
@@ -811,7 +850,6 @@ void draw ()
 
 
 
-	cout<<"Position : "<<MAN_POS_Z<<" "<<" is fall "<<isfall<<endl;
 
 //	if(MAN_POS_Z<=0.4)
 //		isfall=true;
@@ -840,6 +878,8 @@ void draw ()
 
 
 
+	cout<<"Position : "<<MAN_POS_Z<<" "<<" is fall "<<isfall<<endl;
+
 
 
 	int itt=0;
@@ -855,8 +895,12 @@ void draw ()
 					}
 				}
 				Matrices.model = glm::mat4(1.0f);
-				if(BOARD_ITEMS[(int)i][(int)j]==1){
+				if(BOARD_ITEMS[(int)i][(int)j]==1 ){
+					
+					if(i>=LEVEL_I[LEVEL_NUM]){
 					if(spikes_z[itt]>=-2){
+						
+					check_spike_hit(i,j,itt);
 					for(int k=0;k<2;k++)
 						for(int l=0;l<2;l++){
 						glm::mat4 tspike1=glm::translate(glm::vec3((i*1.6-1.6*BOARDLENGTH/2)*2-0.8+l*1.6,(j*1.6-1.6*BOARDWIDTH/2)*2-.8+k*1.6,allcenters[(int)i][(int)j]+spikes_z[itt]));
@@ -879,6 +923,7 @@ void draw ()
 						else
 							spikes_z[itt]-=0.03;
 					}
+					}
 					itt++;
 				}
 			}
@@ -888,17 +933,16 @@ void draw ()
 
 
 
-
-
-
-
-
+	for(int i=4;i>LEVEL_NUM;i--)
+	if(level_posx[i]-5>=MAN_POS_X)
+			LEVEL_NUM++;
 
 
 	markbrick();
 	updatebrickwait();
 	checkbrickfall();
 	brickfall();
+
 
 	int it=0;
 	int it2=0;
@@ -914,6 +958,7 @@ void draw ()
 						rotate_status.push_back(rand()&1);
 						blockcenters_z.push_back(0.4);
 						allcenters[(int)i][(int)j]=0.4;
+						cout<<"Real sizesssssssssssssss "<<blockcenters.size()<<" "<<blockcenters_z.size()<<endl;
 					}
 					else if(BOARD_MAP[(int)i][(int)j]==2){
 						woodbrickcenters.push_back(make_pair((i*1.6-1.6*BOARDLENGTH/2)*2,(j*1.6-1.6*BOARDWIDTH/2)*2));
@@ -924,6 +969,7 @@ void draw ()
 					else if(BOARD_MAP[(int)i][(int)j]==3){
 						blockcenters.push_back(make_pair((i*1.6-1.6*BOARDLENGTH/2)*2,(j*1.6-1.6*BOARDWIDTH/2)*2));
 						greenblock_rotate_status.push_back(make_pair(rand()%2,rand()&1));
+						blockcenters_z.push_back(0.4);
 						greenblock_z.push_back(0.4);
 						allcenters[(int)i][(int)j]=0.4;
 					}
@@ -937,7 +983,9 @@ void draw ()
 
 				}
 				Matrices.model = glm::mat4(1.0f);
-				if(BOARD_MAP[(int)i][(int)j]==1 && !CROSSOVER){
+				if(BOARD_MAP[(int)i][(int)j]==1){
+					
+				if(i>=LEVEL_I[LEVEL_NUM]){
 					glm::mat4 translateCube=glm::translate(glm::vec3((i*1.6-1.6*BOARDLENGTH/2)*2,(j*1.6-1.6*BOARDWIDTH/2)*2,0));
 					if(rotate_status[it]){
 						glm::mat4 rotatecube = glm::rotate((float)(90*M_PI/180.0f), glm::vec3(0,0,1));
@@ -948,9 +996,12 @@ void draw ()
 					MVP = VP * Matrices.model;
 					glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
 					draw3DObject(BLOCKS[0]);
+					}
 					it++;
 				}
-				else if(BOARD_MAP[(int)i][(int)j]==2 && !CROSSOVER){
+				else if(BOARD_MAP[(int)i][(int)j]==2){
+					
+					if(i>=LEVEL_I[LEVEL_NUM]){
 					glm::mat4 scaleCube=glm::scale(glm::vec3(0.9,0.3,0.5));
 					glm::mat4 translateCube=glm::translate(glm::vec3((i*1.6-1.6*BOARDLENGTH/2)*2,(j*1.6-1.6*BOARDWIDTH/2)*2,brick_height[it2]));
 					glm :: mat4 positionCube=glm::translate(glm::vec3(0,-1.0,0));
@@ -966,9 +1017,12 @@ void draw ()
 						draw3DObject(WOODBRICK_1);
 						positionCube=glm::translate(glm::vec3(0,-1+l,0));
 					}
+					}
 					it2++;
 				}
-				else if(BOARD_MAP[(int)i][(int)j]==3 && CROSSOVER){
+				else if(BOARD_MAP[(int)i][(int)j]==3){
+					
+					if(i>=LEVEL_I[LEVEL_NUM]){
 					glm::mat4 translateCube=glm::translate(glm::vec3((i*1.6-1.6*BOARDLENGTH/2)*2,(j*1.6-1.6*BOARDWIDTH/2)*2,0));
 					if(greenblock_rotate_status[it3].second){
 						glm::mat4 rotatecube = glm::rotate((float)(90*M_PI/180.0f), glm::vec3(0,0,1));
@@ -979,9 +1033,12 @@ void draw ()
 					MVP = VP * Matrices.model;
 					glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
 					draw3DObject(GREEN_BLOCK[greenblock_rotate_status[it3].first]);
+					}
 					it3++;
 				}
-				else if(BOARD_MAP[(int)i][(int)j]==4 && CROSSOVER){
+				else if(BOARD_MAP[(int)i][(int)j]==4){
+					
+					if(i>=LEVEL_I[LEVEL_NUM]){
 					glm::mat4 tCube=glm::translate(glm::vec3((i*1.6-1.6*BOARDLENGTH/2)*2,(j*1.6-1.6*BOARDWIDTH/2)*2,movingblocks_z[it4]-0.4));
 					if(movingblocks_rotate_status[it4].second){
 						glm::mat4 rotatecube = glm::rotate((float)(90*M_PI/180.0f), glm::vec3(0,0,1));
@@ -1008,11 +1065,9 @@ void draw ()
 					allcenters[(int)i][(int)j]=movingblocks_z[it4];
 					if(isonblock==it4)
 						MAN_POS_Z=movingblocks_z[it4];
+					}
 					it4++;
 				}
-
-
-
 			}
 		}
 	firsttime=false;
@@ -1023,11 +1078,10 @@ void draw ()
 	check_fall();
 
 
-
-	if(CROSSOVER){
+	if(LEVEL_NUM==4){
 		Matrices.model = glm::mat4(1.0f);
-		glm:: mat4 tground1=glm::translate(glm::vec3(-48.5,-16,-6));
-		glm:: mat4 tscale1 =glm::scale(glm::vec3(10,1,5));
+		glm:: mat4 tground1=glm::translate(glm::vec3(-110,16,-6));
+		glm:: mat4 tscale1 =glm::scale(glm::vec3(8,1,5));
 		Matrices.model *= tground1*tscale1;
 		MVP = VP * Matrices.model;
 		glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -1035,14 +1089,14 @@ void draw ()
 
 
 
-		Matrices.model = glm::translate(glm::vec3(0,12.8,0))*Matrices.model;
+		Matrices.model = glm::translate(glm::vec3(0,13,0))*Matrices.model;
 		MVP = VP * Matrices.model;
 		glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
 		draw3DObject(GROUND);
 
 		Matrices.model = glm::mat4(1.0f);
-		tground1=glm::translate(glm::vec3(-67,-10,-6));
-		tscale1 =glm::scale(glm::vec3(1,5,5));
+		tground1=glm::translate(glm::vec3(-121,22,-6));
+		tscale1 =glm::scale(glm::vec3(1,5.5,5));
 		Matrices.model *= tground1*tscale1;
 		MVP = VP * Matrices.model;
 		glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -1054,13 +1108,13 @@ void draw ()
 
 
 
+///////////////////////////////////////////////////////////
 
 
-
-	if(!CROSSOVER){
+	for(int i=0;i<LEVEL_NUM;i++){
 
 	Matrices.model = glm::mat4(1.0f);
-	glm:: mat4 tbase1=glm::translate(glm::vec3(GATE_POS_X,GATE_POS_Y-5,0));
+	glm:: mat4 tbase1=glm::translate(glm::vec3(GATE_POS_X-i*47-(i==2)*27 -(i==3)*26,GATE_POS_Y-5+(i==3)*7,0));
 	Matrices.model *= tbase1;
 	MVP = VP * Matrices.model;
 	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -1071,7 +1125,7 @@ void draw ()
 	draw3DObject(GATE_BASE1);
 
 	Matrices.model = glm::mat4(1.0f);
-	glm:: mat4 tbase2=glm::translate(glm::vec3(GATE_POS_X,GATE_POS_Y-5,0));
+	glm:: mat4 tbase2=glm::translate(glm::vec3(GATE_POS_X-i*47-(i==2)*27-(i==3)*26,GATE_POS_Y-5+(i==3)*7,0));
 	Matrices.model *= tbase2;
 	MVP = VP * Matrices.model;
 	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -1083,7 +1137,7 @@ void draw ()
 
 
 	Matrices.model = glm::mat4(1.0f);
-	glm:: mat4 tmid1=glm::translate(glm::vec3(GATE_POS_X,GATE_POS_Y-5,0));
+	glm:: mat4 tmid1=glm::translate(glm::vec3(GATE_POS_X-i*47-(i==2)*27-(i==3)*26,GATE_POS_Y-5+(i==3)*7,0));
 	Matrices.model *= tmid1;
 	MVP = VP * Matrices.model;
 	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -1095,7 +1149,7 @@ void draw ()
 	draw3DObject(GATE_L_MIDDLE);
 
 	Matrices.model = glm::mat4(1.0f);
-	tmid1=glm::translate(glm::vec3(GATE_POS_X,GATE_POS_Y-5,0));
+	tmid1=glm::translate(glm::vec3(GATE_POS_X-i*47-(i==2)*27-(i==3)*26,GATE_POS_Y-5+(i==3)*7,0));
 	glm::mat4 rotatemid1 = glm::rotate((float)(180*M_PI/180.0f), glm::vec3(0,0,1));
 	Matrices.model *= tmid1*rotatemid1;
 	MVP = VP * Matrices.model;
@@ -1110,13 +1164,13 @@ void draw ()
 
 
 	Matrices.model = glm::mat4(1.0f);
-	glm:: mat4 tmid2=glm::translate(glm::vec3(GATE_POS_X,GATE_POS_Y-5,0));
+	glm:: mat4 tmid2=glm::translate(glm::vec3(GATE_POS_X-i*47-(i==2)*27-(i==3)*26,GATE_POS_Y-5+(i==3)*7,0));
 	Matrices.model *= tmid2;
 	MVP = VP * Matrices.model;
 	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
 	draw3DObject(GATE_U_MIDDLE);
 
-	tmid2=glm::translate(glm::vec3(GATE_POS_X,5+GATE_POS_Y,0));
+	tmid2=glm::translate(glm::vec3(GATE_POS_X-i*47-(i==2)*27-(i==3)*26,5+GATE_POS_Y+(i==3)*7,0));
 	Matrices.model = tmid2;
 	MVP = VP * Matrices.model;
 	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -1125,7 +1179,7 @@ void draw ()
 
 	Matrices.model = glm::mat4(1.0f);
 	glm:: mat4 Stop=glm::scale(glm::vec3(1,1.2,1));
-	glm:: mat4 Ttop=glm::translate(glm::vec3(GATE_POS_X,GATE_POS_Y,0));
+	glm:: mat4 Ttop=glm::translate(glm::vec3(GATE_POS_X-i*47-(i==2)*27-(i==3)*26,GATE_POS_Y+(i==3)*7,0));
 	Matrices.model *= Ttop*Stop;
 	MVP = VP * Matrices.model;
 	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -1133,15 +1187,7 @@ void draw ()
 
 	}
 
-
-
-
-
-
-
-
-
-
+/////////////////////////////////////////////////////////////////////////////
 
 
 	Matrices.model = glm::mat4(1.0f);
@@ -1360,7 +1406,6 @@ void initGL (GLFWwindow* window, int width, int height)
 
 
 
-
 	//BLACK STUFF
 	X.c1=0;
 	UPPER_BODY =createCube(X,1,-0.6,-0.4,0, 0.6,-0.4,0, -0.65,-0.4,1 ,0.65,-0.4,1, -0.65,0.4,1, 0.65,0.4,1, -0.6,0.4,0, 0.6,0.4,0);
@@ -1429,13 +1474,15 @@ void initGL (GLFWwindow* window, int width, int height)
 
 int main (int argc, char** argv)
 {
-	int width = 600;
-	int height = 600;
+	int width = 1400;
+	int height = 720;
 	GLFWwindow* window = initGLFW(width, height);
 	initGL (window, width, height);
 	double last_update_time = glfwGetTime(), current_time;
 	while (!glfwWindowShouldClose(window)) 
 	{
+		glfwGetCursorPos(window,&CURSOR_X,&CURSOR_Y);
+		glfwSetScrollCallback(window, scroll_callback);
 		draw();
 		glfwSwapBuffers(window);
 		glfwPollEvents();
