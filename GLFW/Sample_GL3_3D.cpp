@@ -31,6 +31,8 @@ GLuint programID;
 
 /*********************************************************************************************/
 
+int LIVES=5;
+int SCORE=0;
 
 const int BOARDWIDTH=20;
 const int BOARDLENGTH=80;
@@ -51,12 +53,14 @@ float hori_angle,ver_angle;
 float final_hori_angle=0;
 float final_ver_angle=0;
 float VIEWLEN=30;
-
+bool DEATH=false;
 
 int LEVEL_I[]={0,51,36,13,0};
 float level_posx[]={0,125,44,-3,-70};
 float level_posy[]={0,-32,-10,-10,0};
 int LEVEL_NUM=1;
+
+
 
 int BOARD_MAP[BOARDLENGTH][BOARDWIDTH] ={
 	
@@ -146,7 +150,7 @@ int BOARD_MAP[BOARDLENGTH][BOARDWIDTH] ={
 	{1,0,1,0,0,0,0,0,1,1,0,0,1,0,0,0,1,0,0,0},
 	{1,1,1,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0},
 	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0},
-	{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0},
+	{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 };
 
 
@@ -211,7 +215,7 @@ int BOARD_ITEMS[BOARDLENGTH][BOARDWIDTH] ={
 	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,3,0,0,0,3,0,0,0,0,0,0,0,0,0,0},
-	{0,0,0,0,0,3,0,0,0,1,0,0,0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0},
 
 	{0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0},
@@ -249,12 +253,6 @@ int BOARD_ITEMS[BOARDLENGTH][BOARDWIDTH] ={
 
 
 
-
-
-
-
-
-
 typedef struct cubeColour{
 	int c1,c2,c3,c4,c5,c6;
 }cubeColour;
@@ -274,8 +272,6 @@ int isincrementdown=0;
 int isincrementup=0;
 int colour_state=0;
 
-//-7
-//-
 float MAN_POS_X= level_posx[LEVEL_NUM];
 float MAN_POS_Y= level_posy[LEVEL_NUM];
 float MAN_POS_Z = 0.4;
@@ -290,6 +286,7 @@ bool ismanrotate=0;
 int  man_rotatedirection=1;
 int man_movedirection=1;
 float man_angle = 0;
+bool jewel_status[(int)1e4];
 
 vector<pair<float,float> > blockcenters;
 vector<bool> rotate_status;
@@ -306,6 +303,9 @@ vector<int> movingblocks_status;
 vector<int> spikes_status;
 vector<pair<float,float> > spikescenters;
 vector<float> spikes_z;
+vector<pair<float,float> > jewel_centers;
+vector<float> jewel_z;
+float coin_angle=0;
 
 
 int isonblock=-1;
@@ -335,7 +335,7 @@ int leg_direction=1;
 VAO * BLOCKS[1000000],*LOWER_BODY,*UPPER_BODY,*LEGS[2],*THIGHS1,*SHOE[2];
 VAO *THIGHS[2],*NECK,*UPPER_HEAD,*LOWER_HEAD,*MIDDLE_HEAD,*SHOULDER[2],*HANDS[2];
 VAO * WOODBRICK_1,*GREEN_BLOCK[3],*GATE_BASE1,*GATE_BASE2,*GATE_L_MIDDLE,*GATE_U_MIDDLE,*GATE_TOP;
-VAO * GROUND,*SPIKES;
+VAO * GROUND,*SPIKES,*JEWEL[2];
 
 /*******************************************************************************************/
 
@@ -363,8 +363,8 @@ void check_fall(void)
 	
 	for(int i=0;i<blockcenters.size();i++)
 	{
-		if(blockcenters[i].first-1.6<=MAN_POS_X && blockcenters[i].first+1.6>=MAN_POS_X && 
-				MAN_POS_Y>=blockcenters[i].second-1.6 && MAN_POS_Y<=blockcenters[i].second+1.6 && MAN_POS_Z>=blockcenters_z[i]-0.1)
+		if(blockcenters[i].first-1.8<=MAN_POS_X && blockcenters[i].first+1.8>=MAN_POS_X && 
+				MAN_POS_Y>=blockcenters[i].second-1.8 && MAN_POS_Y<=blockcenters[i].second+1.8 && MAN_POS_Z>=blockcenters_z[i]-0.1)
 		{
 			flag=1;
 		}
@@ -447,9 +447,11 @@ void brickfall(void){
 void check_spike_hit(int i,int j,int itt){
 
 	if( spikescenters[itt].first-1.6<=MAN_POS_X && spikescenters[itt].first+1.6>=MAN_POS_X && MAN_POS_Y>=spikescenters[itt].second-1.6 && MAN_POS_Y<=spikescenters[itt].second+1.6 && MAN_POS_Z-1.8<=allcenters[(int)i][(int)j]+spikes_z[itt] && MAN_POS_Z-1.8>=allcenters[(int)i][(int)j]+spikes_z[itt]-2.5){
-	 MAN_POS_X= 40;
-	 MAN_POS_Y= -9;
-	 MAN_POS_Z =0.4;
+		
+		MAN_POS_Z =0.4;
+		MAN_POS_X = level_posx[LEVEL_NUM];
+		MAN_POS_Y=level_posy[LEVEL_NUM];
+		LIVES--;
 	}
 }
 
@@ -459,6 +461,20 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset){
 	if(yoffset==-1)
 		VIEWLEN++;
 }
+
+void collectCoins(void){
+
+	for(int i=0;i<jewel_centers.size();i++)
+		if(jewel_centers[i].first-1.6<=MAN_POS_X && jewel_centers[i].first+1.6>=MAN_POS_X && MAN_POS_Y>= jewel_centers[i].second-1.6 && MAN_POS_Y<=jewel_centers[i].second+1.6){
+			if(!jewel_status[i]){
+				SCORE+=10;
+				cout<<"SCORE : "<<SCORE<<endl;
+			}
+			jewel_status[i]=true;
+
+		}
+}
+
 
 
 
@@ -768,7 +784,18 @@ void draw ()
 
 
 
+	if(MAN_POS_Z<=-20){
+		MAN_POS_X=level_posx[LEVEL_NUM];
+		MAN_POS_Y=level_posy[LEVEL_NUM];
+		MAN_POS_Z=0.4;
+		LIVES--;
+		cout<<"LIVES : "<<LIVES<<endl;
+	}
 
+	if(LIVES==0){
+		cout<<":: RIP :: "<<endl;
+		DEATH=true;
+	}
 
 	if(ismanrotate)
 	{
@@ -797,8 +824,8 @@ void draw ()
 
 
 	if(VIEWS==0){
-		glm::vec3 eye ( -80+40*cos(camera_rotation_angle*M_PI/180.0f),40*sin(camera_rotation_angle*M_PI/180.0f),40*sin(camera_angle*M_PI/180.0));
-		glm::vec3 target (-80, 0, 0);
+		glm::vec3 eye ( +60+40*cos(camera_rotation_angle*M_PI/180.0f),40*sin(camera_rotation_angle*M_PI/180.0f),40*sin(camera_angle*M_PI/180.0));
+		glm::vec3 target (+60, 0, 0);
 		glm:: vec3 up(0,0,1);
 		Matrices.view = glm::lookAt( eye, target, up );
 	}
@@ -830,7 +857,7 @@ void draw ()
 
 
 
-	cout<<MAN_POS_X<<" "<<MAN_POS_Y<<endl;
+	//cout<<MAN_POS_X<<" "<<MAN_POS_Y<<endl;
 
 
 
@@ -878,11 +905,13 @@ void draw ()
 
 
 
-	cout<<"Position : "<<MAN_POS_Z<<" "<<" is fall "<<isfall<<endl;
+	//cout<<"Position : "<<MAN_POS_Z<<" "<<" is fall "<<isfall<<endl;
 
+	collectCoins();
 
 
 	int itt=0;
+	int itt2=0;
 	for(float i = 0 ; i < BOARDLENGTH ; i++)
 		for(float j = 0 ; j < BOARDWIDTH ; j++){
 			if(BOARD_ITEMS[(int)i][(int)j]){
@@ -892,6 +921,10 @@ void draw ()
 						spikescenters.push_back(make_pair((i*1.6-1.6*BOARDLENGTH/2)*2,(j*1.6-1.6*BOARDWIDTH/2)*2));
 						spikes_z.push_back(rand()%3-1);
 						spikes_status.push_back(rand()%2);
+					}
+					else if(BOARD_ITEMS[(int)i][(int)j]==2){
+						jewel_centers.push_back(make_pair((i*1.6-1.6*BOARDLENGTH/2)*2,(j*1.6-1.6*BOARDWIDTH/2)*2));
+						jewel_z.push_back(rand()%180);
 					}
 				}
 				Matrices.model = glm::mat4(1.0f);
@@ -926,6 +959,24 @@ void draw ()
 					}
 					itt++;
 				}
+				else if(BOARD_ITEMS[(int)i][(int)j]==2){
+				
+					if(i>=LEVEL_I[LEVEL_NUM] && !jewel_status[itt2]){
+						for(int k=0;k<2;k++){
+							Matrices.model = glm::mat4(1.0f);
+							glm:: mat4 T1=glm::translate(glm::vec3(jewel_centers[itt2].first,jewel_centers[itt2].second,5+2*cos(M_PI*jewel_z[itt2]/180.0)));
+							glm::mat4 R1 = glm::rotate((float)(coin_angle*M_PI/180.0f), glm::vec3(0,0,1));
+							Matrices.model *= T1*R1;
+							MVP = VP * Matrices.model;
+							glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+							draw3DObject(JEWEL[k]);
+							coin_angle+=0.1;
+							jewel_z[itt2]++;
+						}
+					}
+					itt2++;
+
+				}
 			}
 		}
 	firsttime_items=false;
@@ -958,7 +1009,6 @@ void draw ()
 						rotate_status.push_back(rand()&1);
 						blockcenters_z.push_back(0.4);
 						allcenters[(int)i][(int)j]=0.4;
-						cout<<"Real sizesssssssssssssss "<<blockcenters.size()<<" "<<blockcenters_z.size()<<endl;
 					}
 					else if(BOARD_MAP[(int)i][(int)j]==2){
 						woodbrickcenters.push_back(make_pair((i*1.6-1.6*BOARDLENGTH/2)*2,(j*1.6-1.6*BOARDWIDTH/2)*2));
@@ -1334,6 +1384,10 @@ void draw ()
 	glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
 	draw3DObject(UPPER_HEAD);
 
+
+
+
+
 	
 
 
@@ -1371,6 +1425,21 @@ void initGL (GLFWwindow* window, int width, int height)
 {
 //	for(int i=0;i<100;i++)
 
+
+	
+	
+	for(int i = 0 ; i < BOARDLENGTH ; i++)
+		for(int j = 0 ; j < BOARDWIDTH ; j++){
+			if(BOARD_MAP[i][j] && rand()%6==0)
+				BOARD_ITEMS[i][j]=2;
+		}
+	for(int i=0;i<=LEVEL_I[2];i++)
+		for(int j=0;j<BOARDWIDTH;j++)
+			if(BOARD_MAP[i][j] & rand()%6==0)
+				BOARD_ITEMS[i][j]=1;
+	
+	
+	
 	cubeColour X;
 	X.c1=205102029;X.c2=255165079;X.c3=205102029;X.c4=205102029;
 	BLOCKS[0]=createCube(X,0);
@@ -1405,7 +1474,6 @@ void initGL (GLFWwindow* window, int width, int height)
 	SHOULDER[1]=createCube(X,1,-0.2,-0.2,-0.8, 0.2,-0.2,-0.8, -0.2,-0.2,0 ,0.1,-0.2,-0.2, -0.2,0.2,0, 0.1,0.2,-0.2, -0.2,0.2,-0.8 ,0.2,0.2,-0.8);
 
 
-
 	//BLACK STUFF
 	X.c1=0;
 	UPPER_BODY =createCube(X,1,-0.6,-0.4,0, 0.6,-0.4,0, -0.65,-0.4,1 ,0.65,-0.4,1, -0.65,0.4,1, 0.65,0.4,1, -0.6,0.4,0, 0.6,0.4,0);
@@ -1430,7 +1498,6 @@ void initGL (GLFWwindow* window, int width, int height)
 	GREEN_BLOCK[2]=createCube(X,0, -1.5,-1.5,-1 ,1.5,-1.5,-1 ,-1.5,-1.5,1 ,1.5,-1.5,1 ,-1.5,1.5,1 ,1.5,1.5,1 ,-1.5,1.5,-1,1.5,1.5,-1);
 
 
-
 	X.c1=156102031;	
 	GROUND=createCube(X,1, -1.5,-1.5,-1 ,1.5,-1.5,-1 ,-1.5,-1.5,1 ,1.5,-1.5,1 ,-1.5,1.5,1 ,1.5,1.5,1 ,-1.5,1.5,-1,1.5,1.5,-1);
 
@@ -1451,12 +1518,17 @@ void initGL (GLFWwindow* window, int width, int height)
 	GATE_TOP = createCube(X,1, -0.8,-5,10, -0.8,5,10, -1,-5.5,11 ,-1,5.5,11, 1,-5.5,11 ,1,5.5,11, 0.8,-5,10, 0.8,5,10 );
 
 
-
-
 	//GRAY
 	X.c1=84084084;
 	SPIKES = createCube(X,1, -0.5,0.5,0, -0.5,-0.5,0, 0,0,3 ,0,0,3, 0,0,3 ,0,0,3, 0.5,0.5,0, 0.5,-0.5,0 );
 
+
+
+	//X.c2=255114086;X.c1=800000000;X.c3=X.c2;X.c4=X.c1;
+	
+	X.c2= 218191000;X.c1=255255000;X.c3=X.c2;X.c4=X.c1;
+	JEWEL[0] = createCube(X,0, -0.5,0.5,0, -0.5,-0.5,0, 0,0,1.5 ,0,0,1.5, 0,0,1.5 ,0,0,1.5, 0.5,0.5,0, 0.5,-0.5,0 );
+	JEWEL[1] = createCube(X,0, -0.5,0.5,0, -0.5,-0.5,0, 0,0,-1.5 ,0,0,-1.5, 0,0,-1.5 ,0,0,-1.5, 0.5,0.5,0, 0.5,-0.5,0 );
 	
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
 	Matrices.MatrixID = glGetUniformLocation(programID, "MVP");
@@ -1484,6 +1556,8 @@ int main (int argc, char** argv)
 		glfwGetCursorPos(window,&CURSOR_X,&CURSOR_Y);
 		glfwSetScrollCallback(window, scroll_callback);
 		draw();
+		if(DEATH)
+			quit(window);
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 		current_time = glfwGetTime(); // Time in seconds
